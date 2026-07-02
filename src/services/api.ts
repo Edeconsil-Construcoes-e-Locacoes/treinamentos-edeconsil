@@ -277,6 +277,23 @@ export const turmasAPI = {
   excluir: (id: string) => apiRequest(`/turmas/${id}`, { method: 'DELETE' }),
 }
 
+export const matrizAPI = {
+  listar: () =>
+    apiRequest('/admin/cargo-cursos'),
+  cursosDoCargo: (cargo: string) =>
+    apiRequest(`/admin/cargo-cursos/${encodeURIComponent(cargo)}`),
+  vincular: (cargo: string, curso_id: string) =>
+    apiRequest('/admin/cargo-cursos', {
+      method: 'POST',
+      body: JSON.stringify({ cargo, curso_id }),
+    }),
+  desvincular: (cargo: string, curso_id: string) =>
+    apiRequest('/admin/cargo-cursos', {
+      method: 'DELETE',
+      body: JSON.stringify({ cargo, curso_id }),
+    }),
+}
+
 export const indicadoresAPI = {
   buscar: () => apiRequest('/admin/indicadores'),
 }

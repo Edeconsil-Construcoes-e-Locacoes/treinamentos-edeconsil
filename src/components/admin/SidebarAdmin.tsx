@@ -1,13 +1,14 @@
 import { useTheme } from '../../contexts/ThemeContext'
 import { Logo } from '../Logo'
 import {
-  BarChart2,
+  BarChart2, Grid3x3,
   MessageSquare, LogOut
 } from 'lucide-react'
 
 const navGestao = [
   { label: 'Cursos',                 page: 'cursosAdmin' },
   { label: 'Turmas',                 page: 'turmasAdmin' },
+  { label: 'Matriz de Cursos',       page: 'matrizCursosAdmin', icon: Grid3x3 },
   { label: 'Alunos',                 page: 'alunosAdmin' },
   { label: 'Instrutores',            page: 'instrutoresAdmin' },
   { label: 'Certificados',           page: 'certificadosAdmin' },

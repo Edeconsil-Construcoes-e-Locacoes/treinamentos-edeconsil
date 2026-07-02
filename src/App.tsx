@@ -10,6 +10,7 @@ import { CursosAdmin } from './pages/admin/CursosAdmin'
 import { CursoDetalheAdmin } from './pages/admin/CursoDetalheAdmin'
 import { IndicadoresAdmin } from './pages/admin/IndicadoresAdmin'
 import { TurmasAdmin } from './pages/admin/TurmasAdmin'
+import { MatrizCursosAdmin } from './pages/admin/MatrizCursosAdmin'
 import { AlunosAdmin } from './pages/admin/AlunosAdmin'
 import { InstrutoresAdmin } from './pages/admin/InstrutoresAdmin'
 import { CertificadosAdmin } from './pages/admin/CertificadosAdmin'
@@ -92,7 +93,7 @@ class ErrorBoundary extends React.Component<
 }
 
 type Perfil = 'colaborador' | 'admin' | 'instrutor'
-type Pagina = 'dashboard' | 'meusCursos' | 'meusCursosLista' | 'cursoDetalhe' | 'videoAula' | 'trilha' | 'mensagens' | 'anotacoes' | 'prova' | 'edeconQuiz' | 'admin' | 'cursosAdmin' | 'cursoDetalheAdmin' | 'indicadoresAdmin' | 'turmasAdmin' | 'alunosAdmin' | 'instrutoresAdmin' | 'certificadosAdmin' | 'bibliotecaAdmin' | 'configuracoesAdmin' | 'permissoesAdmin' | 'certificadosColaborador' | 'apostilas' | 'mensagensAdmin' | 'notificacoesAdmin'
+type Pagina = 'dashboard' | 'meusCursos' | 'meusCursosLista' | 'cursoDetalhe' | 'videoAula' | 'trilha' | 'mensagens' | 'anotacoes' | 'prova' | 'edeconQuiz' | 'admin' | 'cursosAdmin' | 'cursoDetalheAdmin' | 'indicadoresAdmin' | 'turmasAdmin' | 'matrizCursosAdmin' | 'alunosAdmin' | 'instrutoresAdmin' | 'certificadosAdmin' | 'bibliotecaAdmin' | 'configuracoesAdmin' | 'permissoesAdmin' | 'certificadosColaborador' | 'apostilas' | 'mensagensAdmin' | 'notificacoesAdmin'
 
 function AppContent() {
   // Limpar sessões antigas (sem campo 'id' no usuário)
@@ -162,6 +163,12 @@ function AppContent() {
     )
     if (pagina === 'turmasAdmin') return (
       <TurmasAdmin
+        onNavigate={(p) => setPagina(p as Pagina)}
+        onLogout={handleLogout}
+      />
+    )
+    if (pagina === 'matrizCursosAdmin') return (
+      <MatrizCursosAdmin
         onNavigate={(p) => setPagina(p as Pagina)}
         onLogout={handleLogout}
       />
