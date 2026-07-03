@@ -294,6 +294,20 @@ export const matrizAPI = {
     }),
 }
 
+export const cargosAPI = {
+  listar: () => apiRequest('/admin/cargos'),
+  criar: (nome: string, setor?: string) =>
+    apiRequest('/admin/cargos', {
+      method: 'POST',
+      body: JSON.stringify({ nome, setor: setor || null }),
+    }),
+  editar: (id: string, nome: string, setor?: string) =>
+    apiRequest(`/admin/cargos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ nome, setor: setor || null }),
+    }),
+}
+
 export const indicadoresAPI = {
   buscar: () => apiRequest('/admin/indicadores'),
 }

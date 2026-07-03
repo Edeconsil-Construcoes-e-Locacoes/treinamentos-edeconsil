@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Users, BookOpen, RefreshCw, ListChecks, X, Check } from 'lucide-react'
+import { Search, Users, BookOpen, RefreshCw, ListChecks, X, Check, Plus, Pencil } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
-import { matrizAPI, cursosAPI } from '../../services/api'
+import { matrizAPI, cursosAPI, cargosAPI } from '../../services/api'
 import { useBreakpoint } from '../../hooks/useMobile'
 
 interface MatrizCursosAdminProps {
@@ -11,9 +11,9 @@ interface MatrizCursosAdminProps {
 }
 
 interface CargoLinha {
-  cargo:        string
+  id:           string
+  nome:         string
   setor:        string | null
-  cr:           string | null
   total_alunos: number | string
   total_cursos: number | string
 }
@@ -117,6 +117,107 @@ function ModalGerenciar({ C, cargo, todosCursos, vinculados, carregando, onToggl
   )
 }
 
+interface ModalCargoProps {
+  C: any
+  cargoEditando: CargoLinha | null
+  nome: string
+  setor: string
+  salvando: boolean
+  erro: string
+  onChangeNome: (v: string) => void
+  onChangeSetor: (v: string) => void
+  onSalvar: () => void
+  onFechar: () => void
+}
+
+function ModalCargo({
+  C, cargoEditando, nome, setor, salvando, erro,
+  onChangeNome, onChangeSetor, onSalvar, onFechar,
+}: ModalCargoProps) {
+  const inputStyle: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    padding: '10px 14px', background: C.surface2,
+    border: `1px solid ${C.border}`, borderRadius: '8px',
+    fontSize: '13px', color: C.text, outline: 'none', fontFamily: 'inherit',
+  }
+  const labelStyle: React.CSSProperties = {
+    fontSize: '11px', fontWeight: 700, color: C.muted,
+    display: 'block', marginBottom: '5px',
+    textTransform: 'uppercase', letterSpacing: '0.5px',
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: '16px',
+    }}>
+      <div style={{
+        background: C.surface, borderRadius: '14px',
+        padding: '28px', width: '100%', maxWidth: '420px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+          <h2 style={{ fontSize: '17px', fontWeight: 700, color: C.text, margin: 0 }}>
+            {cargoEditando ? 'Editar cargo' : 'Novo cargo'}
+          </h2>
+          <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+            <X size={18} color={C.muted} />
+          </button>
+        </div>
+
+        {erro && (
+          <div style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', color: '#ef4444', marginBottom: '14px' }}>
+            ⚠️ {erro}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '14px' }}>
+          <label style={labelStyle}>Nome do cargo <span style={{ color: '#ef4444' }}>*</span></label>
+          <input
+            type="text"
+            value={nome}
+            onChange={e => onChangeNome(e.target.value)}
+            onKeyDown={e => e.stopPropagation()}
+            placeholder="Ex: Técnico Administrativo I"
+            style={inputStyle}
+            autoComplete="off"
+          />
+        </div>
+
+        <div style={{ marginBottom: '20px' }}>
+          <label style={labelStyle}>Setor (opcional)</label>
+          <input
+            type="text"
+            value={setor}
+            onChange={e => onChangeSetor(e.target.value)}
+            onKeyDown={e => e.stopPropagation()}
+            placeholder="Ex: Coordenação de Suprimentos"
+            style={inputStyle}
+            autoComplete="off"
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onFechar}
+            style={{ padding: '10px 20px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, cursor: 'pointer' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onSalvar}
+            disabled={salvando}
+            style={{ padding: '10px 20px', background: C.blue, border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}
+          >
+            {salvando ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminProps) {
   const { C } = useTheme()
   const { cols } = useBreakpoint()
@@ -131,11 +232,18 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
   const [vinculados,     setVinculados]     = useState<Set<string>>(new Set())
   const [carregandoModal, setCarregandoModal] = useState(false)
 
+  const [modalCargo,    setModalCargo]    = useState(false)
+  const [cargoEditando, setCargoEditando] = useState<CargoLinha | null>(null)
+  const [nomeCargo,     setNomeCargo]     = useState('')
+  const [setorCargo,    setSetorCargo]    = useState('')
+  const [salvandoCargo, setSalvandoCargo] = useState(false)
+  const [erroCargo,     setErroCargo]     = useState('')
+
   const carregar = useCallback(async () => {
     setCarregando(true)
     setErro('')
     try {
-      const data = await matrizAPI.listar() as CargoLinha[]
+      const data = await cargosAPI.listar() as CargoLinha[]
       setCargos(Array.isArray(data) ? data : [])
     } catch (err: any) {
       setErro('Erro ao carregar matriz de cursos. Verifique a conexão.')
@@ -146,6 +254,41 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
   }, [])
 
   useEffect(() => { carregar() }, [carregar])
+
+  const abrirModalCargo = (item: CargoLinha | null) => {
+    setCargoEditando(item)
+    setNomeCargo(item?.nome ?? '')
+    setSetorCargo(item?.setor ?? '')
+    setErroCargo('')
+    setModalCargo(true)
+  }
+
+  const fecharModalCargo = () => {
+    setModalCargo(false)
+    setCargoEditando(null)
+    setNomeCargo('')
+    setSetorCargo('')
+    setErroCargo('')
+  }
+
+  const salvarCargo = async () => {
+    if (!nomeCargo.trim()) { setErroCargo('Nome do cargo é obrigatório.'); return }
+    setSalvandoCargo(true)
+    setErroCargo('')
+    try {
+      if (cargoEditando) {
+        await cargosAPI.editar(cargoEditando.id, nomeCargo.trim(), setorCargo.trim() || undefined)
+      } else {
+        await cargosAPI.criar(nomeCargo.trim(), setorCargo.trim() || undefined)
+      }
+      fecharModalCargo()
+      carregar()
+    } catch (err: any) {
+      setErroCargo(err?.message ?? 'Erro ao salvar cargo.')
+    } finally {
+      setSalvandoCargo(false)
+    }
+  }
 
   const abrirGerenciar = async (cargo: string) => {
     setCargoAtivo(cargo)
@@ -197,7 +340,7 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
   }
 
   const cargosFiltrados = cargos.filter(c =>
-    !busca || c.cargo?.toLowerCase().includes(busca.toLowerCase())
+    !busca || c.nome?.toLowerCase().includes(busca.toLowerCase())
   )
 
   const totalAlunos = cargos.reduce((s, c) => s + (parseInt(String(c.total_alunos)) || 0), 0)
@@ -227,23 +370,37 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
               {cargos.length} cargos cadastrados no sistema
             </p>
           </div>
-          <button
-            onClick={carregar}
-            disabled={carregando}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 14px', background: 'none',
-              border: `1px solid ${C.border}`,
-              borderRadius: '8px', fontSize: '12px',
-              color: C.muted, cursor: 'pointer',
-            }}
-          >
-            <RefreshCw
-              size={13}
-              style={{ animation: carregando ? 'spin 0.8s linear infinite' : 'none' }}
-            />
-            Atualizar
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={carregar}
+              disabled={carregando}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', background: 'none',
+                border: `1px solid ${C.border}`,
+                borderRadius: '8px', fontSize: '12px',
+                color: C.muted, cursor: 'pointer',
+              }}
+            >
+              <RefreshCw
+                size={13}
+                style={{ animation: carregando ? 'spin 0.8s linear infinite' : 'none' }}
+              />
+              Atualizar
+            </button>
+            <button
+              onClick={() => abrirModalCargo(null)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '7px 14px', background: '#F5C400', color: '#0d2550',
+                border: 'none', borderRadius: '7px', fontWeight: 700,
+                fontSize: '13px', cursor: 'pointer',
+              }}
+            >
+              <Plus size={14} />
+              Novo cargo
+            </button>
+          </div>
         </div>
 
         {/* Métricas */}
@@ -343,7 +500,7 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
 
               return (
                 <div
-                  key={item.cargo}
+                  key={item.id}
                   style={{
                     background:   C.surface,
                     border:       `1px solid ${C.border}`,
@@ -382,14 +539,14 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
                           whiteSpace: 'nowrap', overflow: 'hidden',
                           textOverflow: 'ellipsis',
                         }}>
-                          {item.cargo}
+                          {item.nome}
                         </p>
                         <p style={{
                           fontSize: '11px', color: C.muted, margin: 0,
                           whiteSpace: 'nowrap', overflow: 'hidden',
                           textOverflow: 'ellipsis',
                         }}>
-                          {item.setor ?? '—'}{item.cr ? ` · ${item.cr}` : ''}
+                          {item.setor ?? '—'}
                         </p>
                       </div>
                     </div>
@@ -430,11 +587,12 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
                   <div style={{
                     padding: '12px 20px',
                     borderTop: `1px solid ${C.border}`,
+                    display: 'flex', gap: '8px',
                   }}>
                     <button
-                      onClick={() => abrirGerenciar(item.cargo)}
+                      onClick={() => abrirGerenciar(item.nome)}
                       style={{
-                        width: '100%', display: 'flex', alignItems: 'center',
+                        flex: 1, display: 'flex', alignItems: 'center',
                         justifyContent: 'center', gap: '8px',
                         padding: '9px 12px', background: 'rgba(26,86,255,0.08)',
                         border: 'none', borderRadius: '8px',
@@ -444,6 +602,20 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
                     >
                       <ListChecks size={14} />
                       Gerenciar cursos
+                    </button>
+                    <button
+                      onClick={() => abrirModalCargo(item)}
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: '6px',
+                        padding: '9px 12px', background: 'none',
+                        border: `1px solid ${C.border}`, borderRadius: '8px',
+                        fontSize: '12px', fontWeight: 600, color: C.muted,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Pencil size={14} />
+                      Editar
                     </button>
                   </div>
                 </div>
@@ -482,6 +654,21 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
           carregando={carregandoModal}
           onToggle={toggleCurso}
           onFechar={fecharGerenciar}
+        />
+      )}
+
+      {modalCargo && (
+        <ModalCargo
+          C={C}
+          cargoEditando={cargoEditando}
+          nome={nomeCargo}
+          setor={setorCargo}
+          salvando={salvandoCargo}
+          erro={erroCargo}
+          onChangeNome={setNomeCargo}
+          onChangeSetor={setSetorCargo}
+          onSalvar={salvarCargo}
+          onFechar={fecharModalCargo}
         />
       )}
     </LayoutAdmin>

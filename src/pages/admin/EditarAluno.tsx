@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Camera } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
-import { usuariosAPI, turmasAPI } from '../../services/api'
+import { usuariosAPI, turmasAPI, cargosAPI } from '../../services/api'
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 
@@ -28,6 +28,7 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
   const [empresaTerceiro, setEmpresaTerceiro] = useState('')
   const [fotoPreview,    setFotoPreview]    = useState<string | null>(null)
   const [turmasDisponiveis, setTurmasDisponiveis] = useState<any[]>([])
+  const [cargos,       setCargos]       = useState<any[]>([])
   const [salvando,     setSalvando]     = useState(false)
   const [erro,         setErro]         = useState('')
   const [sucesso,      setSucesso]      = useState(false)
@@ -38,6 +39,12 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
         const arr = Array.isArray(lista) ? lista : (lista.turmas ?? [])
         setTurmasDisponiveis(arr.filter((t: any) => t.status === 'ativa'))
       })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    cargosAPI.listar()
+      .then((d: any) => setCargos(Array.isArray(d) ? d : []))
       .catch(() => {})
   }, [])
 
@@ -252,17 +259,22 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
         <div>
           <label style={labelStyle}>Cargo</label>
-          <input
-            type="text"
+          <select
             value={cargo}
             onChange={e => setCargo(e.target.value)}
             onKeyDown={stopKeys}
             onFocus={onFocusInput}
             onBlur={onBlurInput}
-            placeholder="Ex: Engenheiro Civil"
-            style={inputStyle}
-            autoComplete="off"
-          />
+            style={{ ...inputStyle, cursor: 'pointer' }}
+          >
+            <option value="">Selecione o cargo</option>
+            {cargo && !cargos.some((c: any) => c.nome === cargo) && (
+              <option value={cargo}>{cargo}</option>
+            )}
+            {cargos.map((c: any) => (
+              <option key={c.id} value={c.nome}>{c.nome}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label style={labelStyle}>Status</label>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useTheme } from '../../contexts/ThemeContext'
-import { turmasAPI } from '../../services/api'
+import { turmasAPI, cargosAPI } from '../../services/api'
 
 interface FormAluno {
   nome:            string
@@ -30,6 +30,7 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
   const { C } = useTheme()
   const [form, setForm]         = useState<FormAluno>(() => ({ ...FORM_INICIAL, setor: setorInicial ?? '' }))
   const [turmasDisponiveis, setTurmasDisponiveis] = useState<any[]>([])
+  const [cargos, setCargos]     = useState<any[]>([])
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState('')
   const [sucesso, setSucesso]   = useState<any>(null)
@@ -40,6 +41,12 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
         const arr = Array.isArray(lista) ? lista : (lista.turmas ?? [])
         setTurmasDisponiveis(arr.filter((t: any) => t.status === 'ativa'))
       })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    cargosAPI.listar()
+      .then((d: any) => setCargos(Array.isArray(d) ? d : []))
       .catch(() => {})
   }, [])
 
@@ -66,9 +73,8 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
         cpf:             cpfLimpo,
         data_nascimento: form.data_nascimento,
         matricula:       form.matricula    || null,
-        cargo:           form.setor,
-        setor:           form.setor,
-        cargo_funcional: form.cargo        || null,
+        cargo:           form.cargo         || null,
+        setor:           form.setor         || null,
         centro_custo:    form.centro_custo || null,
         ramal:           form.ramal        || null,
         celular:         form.celular      || null,
@@ -210,20 +216,22 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
         />
       </div>
 
-      {/* Cargo (texto livre) */}
+      {/* Cargo */}
       <div style={{ marginBottom: '14px' }}>
         <label style={labelStyle}>Cargo</label>
-        <input
-          type="text"
+        <select
           value={form.cargo}
           onChange={handleChange('cargo')}
           onKeyDown={stopKeys}
-          placeholder="Ex: Engenheiro Civil, Técnico de Segurança..."
-          style={inputStyle}
+          style={{ ...inputStyle, cursor: 'pointer', color: form.cargo ? C.text : C.muted }}
           onFocus={e => (e.target.style.borderColor = C.blue)}
           onBlur={e  => (e.target.style.borderColor = C.border)}
-          autoComplete="off"
-        />
+        >
+          <option value="">Selecione o cargo</option>
+          {cargos.map((c: any) => (
+            <option key={c.id} value={c.nome}>{c.nome}</option>
+          ))}
+        </select>
       </div>
 
       {/* Setor / Turma */}
