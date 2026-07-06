@@ -1,0 +1,3 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/Edeconsil-Construcoes-e-Locacoes/backend-treinamentos.git
