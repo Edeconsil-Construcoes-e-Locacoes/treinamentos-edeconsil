@@ -60,7 +60,8 @@ export function VideoAulaColaborador({
   const [mutado, setMutado] = useState(false)
   const [modulosAbertos, setModulosAbertos] = useState([moduloId])
   const [abaAtiva, setAbaAtiva] = useState<'sobre' | 'materiais' | 'anotacoes' | 'perguntas'>('sobre')
-  const [aulasConcluidas, setAulasConcluidas] = useState<number[]>([])
+  // dbId (UUID), não a ordem: ordem colide entre módulos (aula 1 do mód. 2 = aula 1 do mód. 1)
+  const [aulasConcluidas, setAulasConcluidas] = useState<string[]>([])
 
   useEffect(() => {
     let cancelado = false
@@ -139,6 +140,15 @@ export function VideoAulaColaborador({
               }
             }, 10000)
           },
+          // Fim real do vídeo: conclui na hora, sem depender do tick de 10s
+          onStateChange: (e: any) => {
+            if (e.data !== YT.PlayerState.ENDED) return
+            const dbId = aulaDbIdRef.current
+            if (!dbId) return
+            setAulasConcluidas(prev => prev.includes(dbId) ? prev : [...prev, dbId])
+            cursosAPI.salvarProgresso(cursoId, dbId, { percentual: 100, concluida: true })
+              .catch((err: Error) => console.error('Falha ao concluir aula no fim do vídeo:', err))
+          },
         },
       })
     }
@@ -191,17 +201,28 @@ export function VideoAulaColaborador({
   const aulaAtiva = moduloAtivo.aulas.find(a => a.id === aulaId) ?? moduloAtivo.aulas[0]
 
   const marcarConcluida = () => {
-    if (!aulaAtiva || aulasConcluidas.includes(aulaAtiva.id)) return
-    setAulasConcluidas(prev => [...prev, aulaAtiva.id])
+    if (!aulaAtiva || aulasConcluidas.includes(aulaAtiva.dbId)) return
+    setAulasConcluidas(prev => [...prev, aulaAtiva.dbId])
     if (aulaAtiva.dbId) {
       cursosAPI.salvarProgresso(cursoId, aulaAtiva.dbId, { percentual: 100, concluida: true })
         .catch((err: Error) => console.error('Falha ao marcar aula como concluída:', err))
     }
   }
 
-  const concluida = !!aulaAtiva && (aulasConcluidas.includes(aulaAtiva.id) || aulaAtiva.status === 'Concluída')
-  const totalConcluidas = aulasConcluidas.length + curso.aulasConcluidas
-  const progressoGeral = Math.round((totalConcluidas / (curso.totalAulas || 1)) * 100)
+  const concluida = !!aulaAtiva && (aulasConcluidas.includes(aulaAtiva.dbId) || aulaAtiva.status === 'Concluída')
+  const todasAulas = curso.modulos.flatMap(m => m.aulas)
+  const estaConcluida = (a: { dbId: string; status: string }) =>
+    a.status === 'Concluída' || aulasConcluidas.includes(a.dbId)
+
+  // Contador: discreto — só aulas efetivamente concluídas
+  const totalConcluidas = todasAulas.filter(estaConcluida).length
+  // Barra: % assistido — soma o percentual parcial de cada aula
+  const progressoGeral = curso.totalAulas > 0
+    ? Math.round(
+        todasAulas.reduce((s, a) => s + (estaConcluida(a) ? 100 : a.progresso), 0)
+        / (curso.totalAulas * 100) * 100
+      )
+    : 0
 
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -522,6 +543,7 @@ export function VideoAulaColaborador({
             <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: C.text }}>Progresso do Curso</span>
+                <span style={{ fontSize: '10px', color: C.muted, marginLeft: 'auto', marginRight: '6px' }}>assistido</span>
                 <span style={{ fontSize: '16px', fontWeight: 700, color: C.blue }}>{progressoGeral}%</span>
               </div>
               <div style={{ background: 'rgba(26,86,255,0.10)', borderRadius: '4px', height: '5px', marginBottom: '4px' }}>
@@ -551,14 +573,14 @@ export function VideoAulaColaborador({
                   >
                     <div style={{ flex: 1, marginRight: '8px' }}>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: C.text, lineHeight: 1.4 }}>{mod.titulo}</div>
-                      <div style={{ fontSize: '10px', color: C.muted, marginTop: '2px' }}>{mod.aulas.filter(a => aulasConcluidas.includes(a.id) || a.status === 'Concluída').length}/{mod.totalAulas}</div>
+                      <div style={{ fontSize: '10px', color: C.muted, marginTop: '2px' }}>{mod.aulas.filter(estaConcluida).length}/{mod.totalAulas}</div>
                     </div>
                     {modulosAbertos.includes(mod.id) ? <ChevronUp size={14} color={C.muted} /> : <ChevronRight size={14} color={C.muted} />}
                   </div>
 
                   {modulosAbertos.includes(mod.id) && mod.aulas.map(aula => {
                     const isAtiva = aula.id === aulaAtiva.id && mod.id === moduloAtivo.id
-                    const isConcluida = aulasConcluidas.includes(aula.id) || aula.status === 'Concluída'
+                    const isConcluida = estaConcluida(aula)
                     return (
                       <div
                         key={aula.id}

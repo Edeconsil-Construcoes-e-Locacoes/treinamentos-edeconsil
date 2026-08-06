@@ -9,7 +9,9 @@ export interface CursoReal {
   cor: string | null
   icone: string | null
   total_aulas: number
-  aulas_concluidas?: number
+  /** Contagem real de aulas (COUNT no banco). cursos.total_aulas é coluna morta — usar esta. */
+  total_aulas_real: number
+  aulas_concluidas: number
   progresso_usuario: number
   nota_obtida?: number | null
   aprovado?: boolean | null
@@ -71,8 +73,10 @@ export function useDadosReaisAluno(): DadosAluno {
           carga_horaria:     c.carga_horaria ?? null,
           nota_minima:       c.nota_minima   ?? 70,
           total_aulas:       c.total_aulas      ?? 0,
+          // COUNT/ROUND do Postgres chegam como STRING no node-pg — sem Number() as somas concatenam
+          total_aulas_real:  Number(c.total_aulas_real ?? c.total_aulas ?? 0),
           aulas_concluidas:  Number(c.aulas_concluidas ?? 0),
-          progresso_usuario: c.progresso_usuario ?? c.progresso ?? 0,
+          progresso_usuario: Number(c.progresso_usuario ?? c.progresso ?? 0),
           nota_obtida:       c.nota_obtida ?? null,
           aprovado:          c.aprovado    ?? null,
           status:            c.status,
@@ -153,12 +157,12 @@ export function useDadosReaisAluno(): DadosAluno {
   const cursosConcluidos = cursos.filter(c => c.progresso_usuario >= 100).length
   const cursosAtivos     = totalCursos - cursosConcluidos
 
-  const totalAulas      = cursos.reduce((s, c) => s + (c.total_aulas || 0), 0)
-  const aulasConcluidas = cursos.reduce((s, c) =>
-    s + Math.round((c.total_aulas || 0) * c.progresso_usuario / 100), 0)
+  const totalAulas      = cursos.reduce((s, c) => s + (c.total_aulas_real || 0), 0)
+  const aulasConcluidas = cursos.reduce((s, c) => s + (c.aulas_concluidas  || 0), 0)
 
-  const percentual = totalCursos > 0
-    ? Math.round(cursos.reduce((s, c) => s + c.progresso_usuario, 0) / totalCursos)
+  // Ponderado por aula (não média por curso): bate com o card do curso
+  const percentual = totalAulas > 0
+    ? Math.round(aulasConcluidas / totalAulas * 100)
     : 0
 
   const horasEstudadas = Math.round((aulasConcluidas * 30) / 60)
