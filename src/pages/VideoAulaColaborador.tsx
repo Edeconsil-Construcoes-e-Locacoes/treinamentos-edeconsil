@@ -37,7 +37,7 @@ export function VideoAulaColaborador({
     modulos: {
       id: number; titulo: string
       aulas: {
-        id: number; dbId: number; numero: number; titulo: string; descricao: string
+        id: number; dbId: string; numero: number; titulo: string; descricao: string
         duracao: string; status: string; progresso: number
         videoUrl: string; videoDisponivel: boolean; videoTipo: string
         materiais: { nome: string; tamanho: string; tipo: string; url: string }[]
@@ -50,7 +50,7 @@ export function VideoAulaColaborador({
   const ytIframeRef = useRef<HTMLIFrameElement>(null)
   const ytPlayerRef = useRef<any>(null)
   const ultimoSalvoRef = useRef(-1)
-  const aulaDbIdRef = useRef<number | null>(null)
+  const aulaDbIdRef = useRef<string | null>(null)
   const [tocando, setTocando] = useState(false)
   const [progresso, setProgresso] = useState(0)
   const [tempoAtual, setTempoAtual] = useState('0:00')
@@ -135,7 +135,7 @@ export function VideoAulaColaborador({
                 const pct = Math.round((atual / total) * 100)
                 cursosAPI.salvarProgresso(cursoId, aulaDbIdRef.current, {
                   percentual: pct, concluida: pct >= 90,
-                }).catch(() => {})
+                }).catch((err: Error) => console.error('Falha ao salvar progresso (YouTube):', err))
               }
             }, 10000)
           },
@@ -173,7 +173,8 @@ export function VideoAulaColaborador({
     if (seg > 0 && seg % 10 === 0 && seg !== ultimoSalvoRef.current && aulaDbIdRef.current) {
       ultimoSalvoRef.current = seg
       const pct = total > 0 ? Math.round((v.currentTime / total) * 100) : 0
-      cursosAPI.salvarProgresso(cursoId, aulaDbIdRef.current, { percentual: pct, concluida: false }).catch(() => {})
+      cursosAPI.salvarProgresso(cursoId, aulaDbIdRef.current, { percentual: pct, concluida: false })
+        .catch((err: Error) => console.error('Falha ao salvar progresso (vídeo):', err))
     }
   }
 
@@ -194,7 +195,7 @@ export function VideoAulaColaborador({
     setAulasConcluidas(prev => [...prev, aulaAtiva.id])
     if (aulaAtiva.dbId) {
       cursosAPI.salvarProgresso(cursoId, aulaAtiva.dbId, { percentual: 100, concluida: true })
-        .catch(() => {})
+        .catch((err: Error) => console.error('Falha ao marcar aula como concluída:', err))
     }
   }
 
