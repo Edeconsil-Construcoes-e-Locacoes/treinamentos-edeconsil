@@ -80,7 +80,7 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
     setErro('')
     if (!titulo.trim())   { setErro('Título é obrigatório'); return }
     if (!slug.trim())     { setErro('Slug é obrigatório'); return }
-    if (!ehEdicao && !turmaSelecionada) { setErro('Selecione a turma'); return }
+    // Turma é opcional: curso sem turma fica visível para TODOS os alunos.
     if (!instrutor.trim()) { setErro('Instrutor é obrigatório'); return }
 
     setSalvando(true)
@@ -249,7 +249,7 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
       {/* Categoria + Cargo */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
         <div>
-          <label style={labelStyle}>Turma <span style={{ color: '#ef4444' }}>*</span></label>
+          <label style={labelStyle}>Turma (opcional)</label>
           <select value={turmaSelecionada} onChange={e => {
             const id = e.target.value
             setTurmaSelecionada(id)
@@ -258,7 +258,7 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
           }}
             onKeyDown={stopKeys} onFocus={onFocusI} onBlur={onBlurI}
             style={{ ...inputStyle, cursor: 'pointer', color: turmaSelecionada ? C.text : C.muted }}>
-            <option value="">Selecione a turma</option>
+            <option value="">Sem turma — visível para todos os alunos</option>
             {turmasDisponiveis.map((t: any) => (
               <option key={t.id} value={t.id}>{t.cargo_grupo || t.nome}</option>
             ))}
