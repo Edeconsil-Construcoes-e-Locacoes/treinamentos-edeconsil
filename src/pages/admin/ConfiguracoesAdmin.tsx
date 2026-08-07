@@ -441,7 +441,7 @@ export function ConfiguracoesAdmin({ onNavigate, onLogout }: ConfiguracoesAdminP
                   onClick={async () => {
                     try {
                       const token   = localStorage.getItem('edeconsil_token')
-                      const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://web-production-1cfeb.up.railway.app/api'
+                      const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://edeconsil.driverpro.site/api'
                       const resp    = await fetch(`${apiBase}${exp.rota}`, { headers: { Authorization: `Bearer ${token}` } })
                       const data    = await resp.json()
                       const rows    = Array.isArray(data) ? data : (data.usuarios ?? data.certificados ?? data.cursos ?? data.instrutores ?? [])

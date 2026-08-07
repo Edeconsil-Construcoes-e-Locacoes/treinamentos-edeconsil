@@ -1,6 +1,6 @@
 const API_BASE_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ??
-  'https://web-production-1cfeb.up.railway.app/api'
+  'https://edeconsil.driverpro.site/api'
 
 export async function apiRequest<T>(
   endpoint: string,
