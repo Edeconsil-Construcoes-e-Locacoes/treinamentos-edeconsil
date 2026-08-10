@@ -6,7 +6,8 @@ import {
 import { useTheme } from '../contexts/ThemeContext'
 import { Sidebar } from '../components/Sidebar'
 import { Topbar } from '../components/Topbar'
-import { provaAPI } from '../services/api'
+import { ModalAvaliacao } from '../components/ModalAvaliacao'
+import { provaAPI, avaliacaoAPI } from '../services/api'
 
 interface Questao {
   id: string
@@ -32,6 +33,7 @@ interface ResultadoProva {
   tentativa: number
   detalhe: DetalheResposta[]
   mensagem: string
+  certificado: { codigo: string } | null
 }
 
 interface ProvaOnlineProps {
@@ -65,6 +67,17 @@ export function ProvaOnline({
 
   const [tempoRestante, setTempoRestante] = useState(30 * 60)
   const [timerAtivo, setTimerAtivo]       = useState(false)
+
+  const [mostrarAvaliacao, setMostrarAvaliacao] = useState(false)
+
+  // Só pergunta a quem foi aprovado, e só se o curso pedir avaliação e o aluno
+  // ainda não tiver respondido nem dispensado (a checagem é do banco).
+  useEffect(() => {
+    if (!resultado?.aprovado) return
+    avaliacaoAPI.status(cursoSlug)
+      .then(s => { if (s.ativa && !s.ja_respondeu) setMostrarAvaliacao(true) })
+      .catch(err => console.error('Erro ao consultar status da avaliação:', err))
+  }, [resultado, cursoSlug])
 
   useEffect(() => {
     provaAPI.buscar(cursoSlug)
@@ -266,6 +279,14 @@ export function ProvaOnline({
             </div>
           </div>
         </main>
+
+        {mostrarAvaliacao && (
+          <ModalAvaliacao
+            cursoSlug={cursoSlug}
+            cursoTitulo={cursoTitulo}
+            onFechar={() => setMostrarAvaliacao(false)}
+          />
+        )}
       </div>
     )
   }

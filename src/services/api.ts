@@ -132,6 +132,22 @@ export const provaAPI = {
     }),
 }
 
+export interface StatusAvaliacao {
+  ativa: boolean
+  ja_respondeu: boolean
+}
+
+export const avaliacaoAPI = {
+  status: (slug: string) =>
+    apiRequest<StatusAvaliacao>(`/cursos/${slug}/avaliacao`),
+
+  enviar: (slug: string, dados: { estrelas?: number; comentario?: string; dispensado?: boolean }) =>
+    apiRequest(`/cursos/${slug}/avaliacao`, {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
+}
+
 export const questoesAPI = {
   atualizar: (id: string, dados: {
     enunciado?: string
