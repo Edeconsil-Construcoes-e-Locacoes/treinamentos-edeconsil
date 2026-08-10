@@ -14,6 +14,7 @@ import { MatrizCursosAdmin } from './pages/admin/MatrizCursosAdmin'
 import { AlunosAdmin } from './pages/admin/AlunosAdmin'
 import { InstrutoresAdmin } from './pages/admin/InstrutoresAdmin'
 import { CertificadosAdmin } from './pages/admin/CertificadosAdmin'
+import { AvaliacoesAdmin } from './pages/admin/AvaliacoesAdmin'
 import { BibliotecaAdmin } from './pages/admin/BibliotecaAdmin'
 import { ConfiguracoesAdmin } from './pages/admin/ConfiguracoesAdmin'
 import { PermissoesAdmin } from './pages/admin/PermissoesAdmin'
@@ -93,7 +94,7 @@ class ErrorBoundary extends React.Component<
 }
 
 type Perfil = 'colaborador' | 'admin' | 'instrutor'
-type Pagina = 'dashboard' | 'meusCursos' | 'meusCursosLista' | 'cursoDetalhe' | 'videoAula' | 'trilha' | 'mensagens' | 'anotacoes' | 'prova' | 'edeconQuiz' | 'admin' | 'cursosAdmin' | 'cursoDetalheAdmin' | 'indicadoresAdmin' | 'turmasAdmin' | 'matrizCursosAdmin' | 'alunosAdmin' | 'instrutoresAdmin' | 'certificadosAdmin' | 'bibliotecaAdmin' | 'configuracoesAdmin' | 'permissoesAdmin' | 'certificadosColaborador' | 'apostilas' | 'mensagensAdmin' | 'notificacoesAdmin'
+type Pagina = 'dashboard' | 'meusCursos' | 'meusCursosLista' | 'cursoDetalhe' | 'videoAula' | 'trilha' | 'mensagens' | 'anotacoes' | 'prova' | 'edeconQuiz' | 'admin' | 'cursosAdmin' | 'cursoDetalheAdmin' | 'indicadoresAdmin' | 'turmasAdmin' | 'matrizCursosAdmin' | 'alunosAdmin' | 'instrutoresAdmin' | 'certificadosAdmin' | 'avaliacoesAdmin' | 'bibliotecaAdmin' | 'configuracoesAdmin' | 'permissoesAdmin' | 'certificadosColaborador' | 'apostilas' | 'mensagensAdmin' | 'notificacoesAdmin'
 
 function AppContent() {
   // Limpar sessões antigas (sem campo 'id' no usuário)
@@ -187,6 +188,12 @@ function AppContent() {
     )
     if (pagina === 'certificadosAdmin') return (
       <CertificadosAdmin
+        onNavigate={(p) => setPagina(p as Pagina)}
+        onLogout={handleLogout}
+      />
+    )
+    if (pagina === 'avaliacoesAdmin') return (
+      <AvaliacoesAdmin
         onNavigate={(p) => setPagina(p as Pagina)}
         onLogout={handleLogout}
       />

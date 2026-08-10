@@ -146,6 +146,11 @@ export const avaliacaoAPI = {
       method: 'POST',
       body: JSON.stringify(dados),
     }),
+
+  listarAdmin: (params?: Record<string, string>) => {
+    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+    return apiRequest(`/admin/avaliacoes${q}`)
+  },
 }
 
 export const questoesAPI = {
