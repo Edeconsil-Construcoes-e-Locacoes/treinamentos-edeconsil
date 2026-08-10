@@ -171,9 +171,6 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
               </strong>
             </span>
             <span style={{ fontSize: '11px', color: C.muted }}>
-              CR: <strong style={{ color: C.blue }}>{aluno?.cr ?? '—'}</strong>
-            </span>
-            <span style={{ fontSize: '11px', color: C.muted }}>
               E-mail: <strong style={{ color: C.text }}>{aluno?.email ?? '—'}</strong>
             </span>
             {aluno?.data_nascimento && (
