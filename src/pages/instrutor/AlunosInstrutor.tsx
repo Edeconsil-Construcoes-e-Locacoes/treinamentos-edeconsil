@@ -34,7 +34,7 @@ function corAvatar(id: string) {
   return CORES_AVATAR[Math.abs(hash) % 8]
 }
 
-type CampoOrdem = 'nome' | 'cr' | 'cargo' | 'setor' | 'status'
+type CampoOrdem = 'nome' | 'cargo' | 'setor' | 'status'
 
 interface AlunosInstrutorProps {
   onNavigate: (page: string) => void
@@ -53,7 +53,6 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
   const [excluindoId, setExcluindoId]                 = useState<string | null>(null)
   const [alunoEditando, setAlunoEditando]             = useState<any>(null)
   const [busca, setBusca]                             = useState('')
-  const [crFiltro, setCrFiltro]                       = useState('')
   const [statusFiltro, setStatusFiltro]               = useState('Todos')
   const [paginaAtual, setPaginaAtual]                 = useState(1)
   const [ordenacao, setOrdenacao]                     = useState<CampoOrdem>('nome')
@@ -113,7 +112,6 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
 
   function limparFiltros() {
     setBusca('')
-    setCrFiltro('')
     setStatusFiltro('Todos')
     setCargoFiltro('')
     setTurmaFiltro('')
@@ -124,12 +122,11 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
   const alunosFiltrados = useMemo(() => {
     let lista = alunos.filter((a: any) => {
       const buscaOk  = busca === '' || a.nome.toLowerCase().includes(busca.toLowerCase()) || a.email.toLowerCase().includes(busca.toLowerCase())
-      const crOk     = crFiltro === '' || a.cr.toLowerCase().includes(crFiltro.toLowerCase())
       const statusOk = statusFiltro === 'Todos' || a.status === statusFiltro
       const cargoOk  = cargoFiltro === '' || (a.cargo ?? '').toLowerCase().includes(cargoFiltro.toLowerCase())
       const turmaOk  = turmaFiltro === '' || a.turma_id === turmaFiltro
       const origemOk = origemFiltro === 'Todos' || (a as any).origem === origemFiltro
-      return buscaOk && crOk && statusOk && cargoOk && turmaOk && origemOk
+      return buscaOk && statusOk && cargoOk && turmaOk && origemOk
     })
 
     lista = [...lista].sort((a, b) => {
@@ -143,7 +140,7 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
     })
 
     return lista
-  }, [alunos, busca, crFiltro, statusFiltro, ordenacao, ordemDir])
+  }, [alunos, busca, statusFiltro, ordenacao, ordemDir])
 
   const totalPaginas = Math.max(1, Math.ceil(alunosFiltrados.length / ITENS_POR_PAGINA))
   const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA
@@ -249,13 +246,6 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
             />
           </div>
 
-          <input
-            value={crFiltro}
-            onChange={e => { setCrFiltro(e.target.value); setPaginaAtual(1) }}
-            placeholder="CR (ex: CR-001)"
-            style={{ ...inputStyle, width: '140px' }}
-          />
-
           <select
             value={statusFiltro}
             onChange={e => { setStatusFiltro(e.target.value); setPaginaAtual(1) }}
@@ -295,7 +285,7 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
             <option value="Terceiro">Terceiro</option>
           </select>
 
-          {(busca || crFiltro || statusFiltro !== 'Todos' || cargoFiltro || turmaFiltro || origemFiltro !== 'Todos') && (
+          {(busca || statusFiltro !== 'Todos' || cargoFiltro || turmaFiltro || origemFiltro !== 'Todos') && (
             <button
               onClick={limparFiltros}
               style={{
@@ -357,7 +347,6 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <colgroup>
               <col />
-              <col style={{ width: '100px' }} />
               <col style={{ width: '160px' }} />
               <col style={{ width: '120px' }} />
               <col style={{ width: '100px' }} />
@@ -368,11 +357,6 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
                 <th style={thStyle} onClick={() => toggleOrdem('nome')}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                     Aluno <SortIcon campo="nome" />
-                  </span>
-                </th>
-                <th style={thStyle} onClick={() => toggleOrdem('cr')}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    CR <SortIcon campo="cr" />
                   </span>
                 </th>
                 <th style={thStyle}>
@@ -399,13 +383,13 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
             <tbody>
               {carregando ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: C.muted, fontSize: '14px' }}>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: C.muted, fontSize: '14px' }}>
                     Carregando alunos...
                   </td>
                 </tr>
               ) : alunosPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: C.muted, fontSize: '14px' }}>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: C.muted, fontSize: '14px' }}>
                     {alunos.length === 0
                       ? 'Nenhum aluno cadastrado ainda.'
                       : 'Nenhum aluno encontrado com os filtros aplicados.'}
@@ -440,15 +424,6 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
                     </div>
                   </td>
 
-                  <td style={{ padding: '12px 12px' }}>
-                    <span style={{
-                      display: 'inline-block', padding: '2px 8px', borderRadius: '20px',
-                      background: `${C.blue}18`, color: C.blue,
-                      fontSize: '11px', fontWeight: 600,
-                    }}>
-                      {aluno.cr}
-                    </span>
-                  </td>
                   <td style={{ padding: '12px 12px' }}>
                     {(aluno as any).origem && (aluno as any).origem !== 'Empregado' ? (
                       <span style={{
