@@ -48,9 +48,9 @@ export function MeusCursosLista({ onNavigate, onLogout, onAbrirCurso }: MeusCurs
   const normalizarCurso = (c: any) => {
     const totalAulas      = c.total_aulas_real ?? c.total_aulas ?? c.totalAulas ?? 0
     const aulasConcluidas = c.aulas_concluidas ?? c.aulasConcluidas ?? 0
-    const progresso       = totalAulas > 0
-      ? Math.round((aulasConcluidas / totalAulas) * 100)
-      : (c.progresso_usuario ?? c.progresso ?? 0)
+    // Barra: % assistido (parcial), como o player. O contador "X de Y
+    // concluídas" abaixo segue discreto — são medidas diferentes de propósito.
+    const progresso       = Number(c.progresso_assistido ?? 0)
     return {
       id:           c.id,
       slug:         c.slug          ?? c.id,
@@ -75,10 +75,12 @@ export function MeusCursosLista({ onNavigate, onLogout, onAbrirCurso }: MeusCurs
 
   const cursosNormalizados = cursosFiltrados.map(normalizarCurso)
 
-  const totalAulasReal = cursosApi.reduce((s: number, c: any) => s + (c.total_aulas ?? c.totalAulas ?? 0), 0)
+  // total_aulas é coluna morta (vale 0 em quase todo curso) — o COUNT real
+  // vem em total_aulas_real. Sem isso o contador do cabeçalho somava zero.
+  const totalAulasReal = cursosApi.reduce((s: number, c: any) => s + (c.total_aulas_real ?? c.total_aulas ?? c.totalAulas ?? 0), 0)
   const aulasConcluídasReal = cursosApi.reduce((s: number, c: any) => {
     const prog  = c.progresso_usuario ?? c.progresso ?? 0
-    const total = c.total_aulas ?? c.totalAulas ?? 0
+    const total = c.total_aulas_real ?? c.total_aulas ?? c.totalAulas ?? 0
     return s + (c.aulas_concluidas ?? c.aulasConcluidas ?? Math.round((prog / 100) * total))
   }, 0)
   const percentualReal = totalAulasReal > 0 ? Math.round((aulasConcluídasReal / totalAulasReal) * 100) : 0

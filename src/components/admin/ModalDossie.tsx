@@ -13,6 +13,7 @@ interface CursoDossie {
   total_aulas_real: number
   aulas_concluidas: number
   progresso_usuario: number
+  progresso_assistido: number
   nota_obtida: number | null
   aprovado: boolean | null
 }
@@ -209,6 +210,9 @@ export function ModalDossie({ aluno, onFechar }: ModalDossieProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {dados.cursos.map(c => {
                     const st = statusCurso(c)
+                    // Barra: parcial (igual ao card de Meus Cursos e ao player).
+                    // Texto e status abaixo continuam discretos.
+                    const barra = Number(c.progresso_assistido ?? 0)
                     return (
                       <div key={c.id} style={{ padding: '12px 14px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
@@ -218,10 +222,10 @@ export function ModalDossie({ aluno, onFechar }: ModalDossieProps) {
                           </span>
                         </div>
                         <div style={{ height: '6px', background: C.border, borderRadius: '20px', overflow: 'hidden', marginBottom: '6px' }}>
-                          <div style={{ width: `${c.progresso_usuario}%`, height: '100%', background: st.cor, transition: 'width 200ms' }} />
+                          <div style={{ width: `${barra}%`, height: '100%', background: st.cor, transition: 'width 200ms' }} />
                         </div>
                         <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>
-                          {c.aulas_concluidas}/{c.total_aulas_real} aulas · {c.progresso_usuario}%
+                          {c.aulas_concluidas}/{c.total_aulas_real} aulas · {barra}% assistido
                           {c.nota_obtida !== null && ` · Nota ${c.nota_obtida}%`}
                         </p>
                       </div>
