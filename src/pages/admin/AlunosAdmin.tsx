@@ -7,6 +7,7 @@ import { turmasAPI } from '../../services/api'
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 import { CadastroAluno } from './CadastroAluno'
 import { EditarAluno } from './EditarAluno'
+import { ModalDossie } from '../../components/admin/ModalDossie'
 import { ImportarAlunosModal } from '../../components/admin/ImportarAlunosModal'
 import { usuariosAPI } from '../../services/api'
 import { useBreakpoint } from '../../hooks/useMobile'
@@ -55,6 +56,7 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [excluindoId, setExcluindoId]                 = useState<string | null>(null)
   const [alunoEditando, setAlunoEditando]             = useState<any>(null)
+  const [alunoDossie, setAlunoDossie]                 = useState<any>(null)
   const [busca, setBusca]                             = useState('')
   const [statusFiltro, setStatusFiltro]               = useState('Todos')
   const [paginaAtual, setPaginaAtual]                 = useState(1)
@@ -422,7 +424,15 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
                         ) : getIniciais(aluno.nome)}
                       </div>
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 600, color: C.text }}>{aluno.nome}</div>
+                        <div
+                          onClick={e => { e.stopPropagation(); setAlunoDossie(aluno) }}
+                          title="Ver dossiê do colaborador"
+                          style={{ fontSize: '13px', fontWeight: 600, color: C.text, cursor: 'pointer', width: 'fit-content' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = C.blue; e.currentTarget.style.textDecoration = 'underline' }}
+                          onMouseLeave={e => { e.currentTarget.style.color = C.text; e.currentTarget.style.textDecoration = 'none' }}
+                        >
+                          {aluno.nome}
+                        </div>
                         <div style={{ fontSize: '11px', color: C.muted }}>{aluno.email}</div>
                         {(aluno as any).origem && (aluno as any).origem !== 'Empregado' && (
                           <span style={{ fontSize: '10px', padding: '1px 5px', background: (aluno as any).origem === 'Terceiro' ? '#fef3c7' : '#ede9fe', color: (aluno as any).origem === 'Terceiro' ? '#92400e' : '#5b21b6', borderRadius: '4px', fontWeight: 600, display: 'inline-block', marginTop: '2px' }}>
@@ -624,6 +634,21 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
                 console.log(`${total} aluno(s) importados`)
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dossiê do Colaborador (só leitura) */}
+      {alunoDossie && (
+        <div
+          onClick={() => setAlunoDossie(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.60)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: C.surface, borderRadius: '16px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${C.border}`, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}
+          >
+            <ModalDossie aluno={alunoDossie} onFechar={() => setAlunoDossie(null)} />
           </div>
         </div>
       )}

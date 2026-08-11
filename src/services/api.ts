@@ -66,6 +66,7 @@ export const usuariosAPI = {
   criar: (dados: unknown) =>
     apiRequest('/usuarios', { method: 'POST', body: JSON.stringify(dados) }),
   buscar: (id: string) => apiRequest(`/usuarios/${id}`),
+  dossie: (id: string) => apiRequest(`/admin/alunos/${id}/dossie`),
   atualizar: (id: string, dados: unknown) =>
     apiRequest(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   importarCsv: (alunos: unknown[]) =>
