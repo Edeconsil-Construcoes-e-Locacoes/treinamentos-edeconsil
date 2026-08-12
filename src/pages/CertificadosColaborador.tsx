@@ -133,7 +133,7 @@ export function CertificadosColaborador({ onNavigate, onLogout }: CertificadosCo
        centrada em ~52% da largura. O nome fica sobre ela; o cargo, abaixo. */
     .assinatura-nome {
       position:absolute; left:52%; transform:translateX(-50%); bottom:9%;
-      font-family:'Great Vibes',cursive; font-size:12pt; color:#1f2937; white-space:nowrap;
+      font-family:'Great Vibes',cursive; font-size:14pt; color:#1f2937; white-space:nowrap;
     }
     .assinatura-cargo {
       position:absolute; left:52%; transform:translateX(-50%); bottom:4.6%;
