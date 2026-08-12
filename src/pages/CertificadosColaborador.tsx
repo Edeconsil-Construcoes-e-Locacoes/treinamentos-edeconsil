@@ -81,85 +81,102 @@ export function CertificadosColaborador({ onNavigate, onLogout }: CertificadosCo
     const janela = window.open('', '_blank', 'width=1200,height=900')
     if (!janela) return
     const dataEmissao = formatarDataSimples(cert.data_emissao)
+    // A janela é about:blank, sem base URL — o caminho da imagem precisa ser
+    // absoluto, senão o fundo não carrega.
+    const fundo = `${window.location.origin}/certificados/modelo-certificado.png`
+    const instrutorNome  = cert.instrutor ?? ''
+    const instrutorEspec = cert.instrutor_especialidade ?? ''
+    const esc = (s: string) => String(s).replace(/[&<>"]/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
+
     janela.document.write(`<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Certificado — ${cert.aluno_nome}</title>
+  <title>Certificado — ${esc(cert.aluno_nome)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Arial',sans-serif; background:#f0f0f0; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
-    .certificado { width:1050px; min-height:680px; background:#ffffff; box-shadow:0 8px 40px rgba(0,0,0,0.20); display:flex; flex-direction:column; position:relative; overflow:hidden; }
-    .header { background:#0d2550; padding:28px 48px; display:flex; align-items:center; justify-content:space-between; }
-    .header-left h2 { color:#F5C400; font-size:15px; font-weight:600; letter-spacing:0.5px; margin-bottom:4px; }
-    .header-left h1 { color:#ffffff; font-size:42px; font-weight:900; letter-spacing:2px; text-transform:uppercase; }
-    .logo-icon { width:64px; height:64px; background:#ffffff; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-left:auto; margin-bottom:6px; }
-    .logo-text { font-size:13px; font-weight:700; color:#ffffff; letter-spacing:1px; text-align:right; }
-    .faixa-amarela { height:6px; background:linear-gradient(90deg,#F5C400,#e6b800); }
-    .corpo { flex:1; padding:48px 80px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; border:3px solid #0d2550; border-top:none; margin:0 16px; }
-    .certifica { font-size:15px; color:#555; margin-bottom:16px; font-style:italic; }
-    .nome-participante { font-size:36px; font-weight:900; color:#0d2550; margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; border-bottom:2px solid #F5C400; padding-bottom:12px; }
-    .texto-conclusao { font-size:15px; color:#444; line-height:1.8; max-width:680px; margin-bottom:20px; }
-    .texto-conclusao strong { color:#0d2550; font-weight:700; }
-    .texto-reconhecimento { font-size:14px; color:#555; line-height:1.7; max-width:620px; margin-bottom:28px; }
-    .data-local { font-size:14px; color:#444; margin-bottom:8px; }
-    .codigo { font-size:11px; color:#999; font-family:monospace; }
-    .footer { background:#f8f8f8; border-top:1px solid #e0e0e0; padding:20px 48px; display:flex; align-items:flex-end; justify-content:space-between; }
-    .selos { display:flex; gap:12px; align-items:center; }
-    .selo { width:44px; height:44px; border-radius:50%; border:2px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; text-align:center; color:#555; line-height:1.2; }
-    .assinaturas { display:flex; gap:48px; }
-    .assinatura { text-align:center; min-width:180px; }
-    .linha-assinatura { border-top:1px solid #333; padding-top:6px; font-size:11px; color:#666; }
-    @media print { body { background:white; padding:0; } .certificado { box-shadow:none; width:100%; } }
+    /* A folha tem a proporção EXATA da imagem (5417x3750 = 1.4445), senão o
+       fundo distorce. 297mm / 1.4445 = 205.6mm — cabe em A4 paisagem. */
+    @page { size: A4 landscape; margin: 0; }
+    body {
+      font-family:'Montserrat',Arial,sans-serif; background:#e9edf2;
+      display:flex; justify-content:center; align-items:center;
+      min-height:100vh; padding:16px;
+      print-color-adjust:exact; -webkit-print-color-adjust:exact;
+    }
+    .certificado {
+      position:relative; width:297mm; height:205.6mm; flex-shrink:0;
+      background-image:url('${fundo}');
+      background-size:100% 100%; background-repeat:no-repeat; background-position:center;
+      box-shadow:0 8px 40px rgba(0,0,0,0.20);
+      print-color-adjust:exact; -webkit-print-color-adjust:exact;
+    }
+    /* Área branca do modelo: ~25% a ~80% da altura. O bloco fica dentro dela. */
+    .corpo {
+      position:absolute; left:12%; right:12%; top:27%; height:50%;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; color:#1f2937;
+    }
+    .certifica       { font-size:12pt; margin-bottom:14pt; }
+    .nome            { font-size:16pt; font-weight:700; color:#0d2550;
+                       text-transform:uppercase; letter-spacing:0.5pt; margin-bottom:16pt; }
+    .texto           { font-size:12pt; line-height:1.75; max-width:88%; margin-bottom:12pt; }
+    .texto strong    { font-weight:700; color:#0d2550; }
+    .local-data      { font-size:12pt; margin-top:6pt; }
+    .codigo          { position:absolute; left:0; right:0; top:77%; text-align:center;
+                       font-size:8pt; color:#9aa4b2; font-family:monospace; }
+    /* Assinatura: a linha impressa no modelo está a ~91,5% da altura,
+       centrada em ~52% da largura. O nome fica sobre ela; o cargo, abaixo. */
+    .assinatura-nome {
+      position:absolute; left:52%; transform:translateX(-50%); bottom:9%;
+      font-family:'Great Vibes',cursive; font-size:12pt; color:#1f2937; white-space:nowrap;
+    }
+    .assinatura-cargo {
+      position:absolute; left:52%; transform:translateX(-50%); bottom:4.6%;
+      font-size:12pt; color:#1f2937; white-space:nowrap;
+    }
+    @media print {
+      body { background:#fff; padding:0; }
+      .certificado { box-shadow:none; }
+    }
   </style>
 </head>
 <body>
   <div class="certificado">
-    <div class="header">
-      <div class="header-left">
-        <h2>Edeconsil Construções e Locações LTDA</h2>
-        <h1>Certificado</h1>
-      </div>
-      <div>
-        <div class="logo-icon">
-          <svg viewBox="0 0 48 48" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="4" y="4" width="40" height="40" rx="4" fill="#0d2550"/>
-            <text x="24" y="32" text-anchor="middle" fill="#F5C400" font-size="22" font-weight="900" font-family="Arial">E</text>
-          </svg>
-        </div>
-        <div class="logo-text">EDECONSIL</div>
-      </div>
-    </div>
-    <div class="faixa-amarela"></div>
     <div class="corpo">
       <p class="certifica">A Edeconsil certifica que</p>
-      <div class="nome-participante">${cert.aluno_nome}</div>
-      <p class="texto-conclusao">
-        concluiu com êxito <strong>${cert.curso_titulo}</strong>,
-        realizado em ${dataEmissao},
+      <div class="nome">${esc(cert.aluno_nome)}</div>
+      <p class="texto">
+        concluiu com êxito <strong>${esc(cert.curso_titulo)}</strong>, realizado em ${dataEmissao},
         demonstrando comprometimento e excelência.
       </p>
-      <p class="texto-reconhecimento">
-        Este certificado é concedido como reconhecimento pelo desempenho
-        e dedicação apresentados.
+      <p class="texto">
+        Este certificado é concedido como reconhecimento pelo desempenho e dedicação apresentados.
       </p>
-      <p class="data-local">São Luís, ${dataEmissao}.</p>
-      <p class="codigo">Código de verificação: ${cert.codigo}</p>
+      <p class="local-data">São Luís, ${dataEmissao}.</p>
     </div>
-    <div class="footer">
-      <div class="selos">
-        <div class="selo" style="border-color:#e63946;color:#e63946;font-size:7px;">GREAT<br>PLACE<br>TO WORK</div>
-        <div class="selo" style="border-color:#0d2550;color:#0d2550;font-size:8px;">ISO<br>9001</div>
-        <div class="selo" style="border-color:#0d2550;color:#0d2550;font-size:8px;">ISO<br>14001</div>
-      </div>
-      <div class="assinaturas">
-        <div class="assinatura"><div style="height:40px;"></div><div class="linha-assinatura">[Assinatura do responsável]<br>[Cargo]</div></div>
-        <div class="assinatura"><div style="height:40px;"></div><div class="linha-assinatura">[Assinatura do responsável]<br>[Cargo]</div></div>
-        <div class="assinatura"><div style="height:40px;"></div><div class="linha-assinatura">[Assinatura do responsável]<br>[Cargo]</div></div>
-      </div>
-    </div>
+    <div class="codigo">Código de verificação: ${esc(cert.codigo)}</div>
+    ${instrutorNome  ? `<div class="assinatura-nome">${esc(instrutorNome)}</div>`   : ''}
+    ${instrutorEspec ? `<div class="assinatura-cargo">${esc(instrutorEspec)}</div>` : ''}
   </div>
-  <script>window.onload = () => { setTimeout(() => window.print(), 500) }</script>
+  <script>
+    // Sem esperar as fontes, o print sai em Arial e a caligrafia se perde.
+    // O timeout é rede de segurança: se o Google Fonts não responder, imprime assim mesmo.
+    var imprimiu = false
+    function imprimir() { if (!imprimiu) { imprimiu = true; window.print() } }
+    window.onload = function () {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { setTimeout(imprimir, 200) })
+        setTimeout(imprimir, 3000)
+      } else {
+        setTimeout(imprimir, 800)
+      }
+    }
+  </script>
 </body>
 </html>`)
     janela.document.close()
