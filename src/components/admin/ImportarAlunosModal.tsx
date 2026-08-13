@@ -97,19 +97,16 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
     }
   }
 
+  // Arquivo fixo em public/modelos/ (2 abas: Alunos + Instruções, com o CPF
+  // já formatado como texto). Substitui a geração por código, que só produzia
+  // a aba de dados e perdia o zero à esquerda do CPF.
   const baixarTemplate = () => {
-    import('xlsx').then(XLSX => {
-      const dados = [
-        ['Nome', 'CPF', 'Cargo', 'Admissão', 'Mat', 'Dat. Nasc', 'Centro de Custo', 'Setor/Turma'],
-        ['João da Silva', '12345678901', 'VIGIA', '01/03/2024', 'MAT-001', '15/06/1990', 'CC-001', 'Serviços Gerais'],
-        ['Maria Oliveira', '98765432100', 'ANALISTA ADMINISTRATIVO I', '15/01/2023', 'MAT-002', '22/09/1985', 'CC-002', 'Recursos Humanos'],
-        ['Carlos Santos', '11122233344', 'TECNICO ADMINISTRATIVO I', '10/05/2023', 'MAT-003', '08/03/1988', '', 'Coordenação de Suprimentos'],
-      ]
-      const ws = XLSX.utils.aoa_to_sheet(dados)
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Alunos')
-      XLSX.writeFile(wb, 'modelo_importacao_alunos.xlsx')
-    })
+    const a = document.createElement('a')
+    a.href = '/modelos/Modelo_Upload_Alunos.xlsx'
+    a.download = 'Modelo_Upload_Alunos.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   // ── ETAPA UPLOAD ──
