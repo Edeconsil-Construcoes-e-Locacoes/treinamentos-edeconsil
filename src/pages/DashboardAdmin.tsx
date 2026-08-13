@@ -43,9 +43,13 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
   // /admin/metricas), então é uma chamada extra — mas é a única série do
   // sistema com dispersão temporal real: data_admissao vem do RH.
   const [admissoes, setAdmissoes] = useState<{ mes: string; total: number }[]>([])
+  const [ultimosAdmitidos, setUltimosAdmitidos] = useState<{ nome: string; cargo: string | null; data_admissao: string }[]>([])
   useEffect(() => {
     indicadoresAPI.buscar()
-      .then((d: any) => setAdmissoes(d?.admissoesPorMes ?? []))
+      .then((d: any) => {
+        setAdmissoes(d?.admissoesPorMes ?? [])
+        setUltimosAdmitidos(d?.ultimosAdmitidos ?? [])
+      })
       .catch(err => console.error('Erro ao carregar admissões:', err))
   }, [])
   const admissoesData = admissoes.map(a => ({ mes: a.mes, total: Number(a.total) }))
@@ -136,6 +140,36 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
                   Sem dados de admissão no período
                 </div>
               )}
+
+              {/* Lista abaixo do gráfico, no mesmo card. O maxHeight + scroll
+                  é o que impede o card de crescer além dos vizinhos do grid. */}
+              <div style={{ borderTop: `1px solid ${C.border}`, marginTop: '14px', paddingTop: '12px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                  Últimos admitidos
+                </div>
+                {ultimosAdmitidos.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: C.muted, padding: '6px 2px' }}>
+                    Nenhuma admissão recente
+                  </div>
+                ) : (
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                    {ultimosAdmitidos.map((a, i) => (
+                      <div key={`${a.nome}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: i < ultimosAdmitidos.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                        <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'rgba(26,86,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: C.blue, flexShrink: 0 }}>
+                          {a.nome.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.nome}</div>
+                          <div style={{ fontSize: '11px', color: C.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.cargo ?? '—'}</div>
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#94a3b8', flexShrink: 0 }}>
+                          {new Date(a.data_admissao.length <= 10 ? a.data_admissao + 'T00:00:00' : a.data_admissao).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Atividades Recentes */}
