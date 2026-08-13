@@ -10,26 +10,6 @@ import { cursosAPI, instrutorAPI, apiRequest } from '../../services/api'
 import { CriarCurso } from '../admin/CriarCurso'
 import { useBreakpoint } from '../../hooks/useMobile'
 
-const cargos = [
-  'Todos os cargos',
-  'Engenheiro de Obras',
-  'Técnico de Segurança',
-  'Encarregado',
-  'Operador de Máquinas',
-  'Administrativo',
-  'Gestor de Projetos',
-]
-
-const trilhas = [
-  'Todas as trilhas',
-  'Obras e Infraestrutura',
-  'Terraplanagem',
-  'Pavimentação',
-  'Equipamentos',
-  'Segurança do Trabalho',
-  'Gestão e Suprimentos',
-]
-
 const statusOpcoes = ['Todos', 'Ativo', 'Rascunho', 'Arquivado']
 
 
@@ -50,6 +30,16 @@ export function CursosInstrutor({ onNavigate: _onNavigate, onAbrirCurso }: {
   const [modalCriar, setModalCriar]       = useState(false)
   const [cursoEditando, setCursoEditando] = useState<any>(null)
   const [confirmExcluir, setConfirmExcluir] = useState<any>(null)
+
+  // Mesmas opções derivadas do CursosAdmin: a lista fixa anterior tinha
+  // cargos que nenhum curso usa, então o filtro nunca casava.
+  const cargos = useMemo(() => (
+    ['Todos os cargos', ...[...new Set(cursos.map(c => c.cargo).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'))]
+  ), [cursos])
+
+  const trilhas = useMemo(() => (
+    ['Todas as trilhas', ...[...new Set(cursos.map(c => c.trilha).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'))]
+  ), [cursos])
   const [erroAcao, setErroAcao]           = useState('')
   const [turmaId, setTurmaId]             = useState<string | null>(null)
 

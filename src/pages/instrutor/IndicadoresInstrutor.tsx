@@ -10,22 +10,6 @@ import {
 import { useTheme } from '../../contexts/ThemeContext'
 import { indicadoresAPI } from '../../services/api'
 
-function Sparkline({ data, cor }: { data: number[]; cor: string }) {
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const w = 100, h = 32
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w
-    const y = h - ((v - min) / (max - min || 1)) * h
-    return `${x},${y}`
-  }).join(' ')
-  return (
-    <svg width={w} height={h} style={{ display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={cor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 export function IndicadoresInstrutor({ onNavigate }: {
   onNavigate: (page: string) => void
 }) {
@@ -44,11 +28,11 @@ export function IndicadoresInstrutor({ onNavigate }: {
   const _ = carregando ? '...' : undefined
 
   const metricas = [
-    { label: 'Total de Colaboradores',  valor: _ ?? String(dados?.colaboradores?.total ?? 0),                                       cor: '#1a56ff', spark: [20,28,25,35,30,42,38,50,45,58,52,65] },
-    { label: 'Matrículas Ativas',       valor: _ ?? String(dados?.matriculas?.total ?? 0),                                          cor: '#10b981', spark: [15,22,18,30,25,38,32,45,40,52,48,60] },
-    { label: 'Certificados Emitidos',   valor: _ ?? String(dados?.certificados?.total ?? 0),                                        cor: '#8b5cf6', spark: [10,15,12,20,18,25,22,32,28,38,35,45] },
-    { label: 'Turmas com Curso',        valor: _ ?? String(dados?.turmas?.comCurso ?? 0),                                           cor: '#f59e0b', spark: [8,12,10,14,12,16,14,18,16,20,18,22]  },
-    { label: 'Taxa de Aprovação',       valor: _ ?? (dados?.provas?.total > 0 ? `${dados.provas.taxaAprovacao}%` : '—'),            cor: '#ef4444', spark: [2,3,2,4,3,5,4,6,5,7,6,8]            },
+    { label: 'Total de Colaboradores',  valor: _ ?? String(dados?.colaboradores?.total ?? 0),                                       cor: '#1a56ff' },
+    { label: 'Matrículas Ativas',       valor: _ ?? String(dados?.matriculas?.total ?? 0),                                          cor: '#10b981' },
+    { label: 'Certificados Emitidos',   valor: _ ?? String(dados?.certificados?.total ?? 0),                                        cor: '#8b5cf6' },
+    { label: 'Turmas com Curso',        valor: _ ?? String(dados?.turmas?.comCurso ?? 0),                                           cor: '#f59e0b'  },
+    { label: 'Taxa de Aprovação',       valor: _ ?? (dados?.provas?.total > 0 ? `${dados.provas.taxaAprovacao}%` : '—'),            cor: '#ef4444'            },
   ]
 
   const certTotal   = dados?.certificados?.total ?? 0
@@ -136,10 +120,7 @@ export function IndicadoresInstrutor({ onNavigate }: {
               <span style={{ fontSize: '11px', color: C.muted, lineHeight: 1.3 }}>{m.label}</span>
             </div>
             <div style={{ fontSize: '24px', fontWeight: 700, color: C.text, marginBottom: '8px' }}>{m.valor}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div style={{ fontSize: '10px', color: C.muted }}>banco de dados</div>
-              <Sparkline data={m.spark} cor={m.cor} />
-            </div>
+            <div style={{ fontSize: '10px', color: C.muted }}>banco de dados</div>
           </div>
         ))}
       </div>
@@ -309,8 +290,10 @@ export function IndicadoresInstrutor({ onNavigate }: {
             ].map(aba => (
               <button
                 key={aba.key}
-                onClick={() => setAbaCursos(aba.key as typeof abaCursos)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 16px', fontSize: '13px', fontWeight: abaCursos === aba.key ? 600 : 400, color: abaCursos === aba.key ? C.blue : C.muted, borderBottom: abaCursos === aba.key ? `2px solid ${C.blue}` : '2px solid transparent', marginBottom: '-1px', transition: 'all 150ms' }}
+                disabled={aba.key !== 'historico'}
+                  title={aba.key === 'historico' ? undefined : 'Ainda não disponível'}
+                  onClick={() => aba.key === 'historico' && setAbaCursos(aba.key as typeof abaCursos)}
+                style={{ background: 'none', border: 'none', cursor: aba.key === 'historico' ? 'pointer' : 'not-allowed', opacity: aba.key === 'historico' ? 1 : 0.45, padding: '8px 16px', fontSize: '13px', fontWeight: abaCursos === aba.key ? 600 : 400, color: abaCursos === aba.key ? C.blue : C.muted, borderBottom: abaCursos === aba.key ? `2px solid ${C.blue}` : '2px solid transparent', marginBottom: '-1px', transition: 'all 150ms' }}
               >
                 {aba.label}
               </button>
@@ -343,12 +326,6 @@ export function IndicadoresInstrutor({ onNavigate }: {
                 Ver todos os colaboradores
               </button>
             </>
-          )}
-
-          {abaCursos !== 'historico' && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: '120px', color: C.muted, fontSize: '13px' }}>
-              Conteúdo de {abaCursos === 'disponiveis' ? 'Treinamentos Disponíveis' : 'Certificados'} em breve
-            </div>
           )}
         </div>
 

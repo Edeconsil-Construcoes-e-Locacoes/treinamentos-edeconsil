@@ -11,26 +11,6 @@ import { cursosAPI } from '../../services/api'
 import { CriarCurso } from './CriarCurso'
 import { useBreakpoint } from '../../hooks/useMobile'
 
-const cargos = [
-  'Todos os cargos',
-  'Engenheiro de Obras',
-  'Técnico de Segurança',
-  'Encarregado',
-  'Operador de Máquinas',
-  'Administrativo',
-  'Gestor de Projetos',
-]
-
-const trilhas = [
-  'Todas as trilhas',
-  'Obras e Infraestrutura',
-  'Terraplanagem',
-  'Pavimentação',
-  'Equipamentos',
-  'Segurança do Trabalho',
-  'Gestão e Suprimentos',
-]
-
 const statusOpcoes = ['Todos', 'Ativo', 'Rascunho', 'Arquivado']
 
 
@@ -52,6 +32,18 @@ export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso }: {
   const [modalCriar, setModalCriar]       = useState(false)
   const [cursoEditando, setCursoEditando] = useState<any>(null)
   const [confirmExcluir, setConfirmExcluir] = useState<any>(null)
+
+  // Opções dos filtros saem dos próprios cursos carregados. A lista fixa
+  // anterior tinha cargos que NENHUM curso usa ("Engenheiro de Obras"...),
+  // então selecionar qualquer uma devolvia lista vazia. Aqui só aparece o
+  // que existe de fato em cursos.cargo / cursos.trilha.
+  const cargos = useMemo(() => (
+    ['Todos os cargos', ...[...new Set(cursos.map(c => c.cargo).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'))]
+  ), [cursos])
+
+  const trilhas = useMemo(() => (
+    ['Todas as trilhas', ...[...new Set(cursos.map(c => c.trilha).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'))]
+  ), [cursos])
   const [erroAcao, setErroAcao]           = useState('')
 
   const carregarCursos = useCallback(async () => {

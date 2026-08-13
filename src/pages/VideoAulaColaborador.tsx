@@ -400,7 +400,7 @@ export function VideoAulaColaborador({
                   { key: 'sobre',     label: 'Sobre a Aula'  },
                   { key: 'materiais', label: 'Materiais'      },
                   { key: 'anotacoes', label: 'Anotações'      },
-                  { key: 'perguntas', label: 'Perguntas (12)' },
+                  { key: 'perguntas', label: 'Perguntas'      },
                 ].map(aba => (
                   <button key={aba.key} onClick={() => setAbaAtiva(aba.key as typeof abaAtiva)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '10px 16px', fontSize: '13px', fontWeight: abaAtiva === aba.key ? 600 : 400, color: abaAtiva === aba.key ? C.text : C.muted, borderBottom: abaAtiva === aba.key ? `2px solid ${C.blue}` : '2px solid transparent', marginBottom: '-1px', fontFamily: "'Inter',sans-serif" }}>

@@ -2,21 +2,26 @@ import {
   GraduationCap, BookOpen, Users, Award,
   UserPlus, TrendingUp, Send, BarChart2,
 } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
+import { useState, useEffect } from 'react'
+import {
+  PieChart, Pie, Cell, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+} from 'recharts'
 import { useTheme } from '../contexts/ThemeContext'
 import { LayoutAdmin } from '../components/admin/LayoutAdmin'
 import { useMetricasAdmin } from '../hooks/useMetricasAdmin'
 import { useBreakpoint } from '../hooks/useMobile'
+import { indicadoresAPI } from '../services/api'
 
 const metricasBase = [
-  { icon: BookOpen,      label: 'Total de Cursos',   cor: '#3b82f6', spark: [10,15,12,20,18,25,22,28,24,32,30,38] },
-  { icon: BookOpen,      label: 'Cursos Ativos',     cor: '#1a56ff', spark: [8,12,10,16,14,20,18,22,20,28,24,32] },
-  { icon: GraduationCap, label: 'Total de Alunos',   cor: '#10b981', spark: [20,35,28,45,38,55,48,65,58,75,68,85] },
-  { icon: Users,         label: 'Alunos Ativos',     cor: '#059669', spark: [18,30,24,40,34,50,44,60,54,70,64,80] },
-  { icon: Users,         label: 'Total de Turmas',   cor: '#8b5cf6', spark: [30,45,38,55,48,65,58,72,65,80,74,90] },
-  { icon: Award,         label: 'Matrículas Ativas', cor: '#f59e0b', spark: [15,22,18,30,25,38,32,45,40,55,50,65] },
-  { icon: TrendingUp,    label: 'Taxa de Conclusão', cor: '#ec4899', spark: [40,45,42,50,48,55,52,60,58,65,62,70] },
-  { icon: TrendingUp,    label: 'Progresso Médio',   cor: '#0891b2', spark: [35,40,38,45,43,50,48,55,52,60,58,65] },
+  { icon: BookOpen,      label: 'Total de Cursos',   cor: '#3b82f6' },
+  { icon: BookOpen,      label: 'Cursos Ativos',     cor: '#1a56ff' },
+  { icon: GraduationCap, label: 'Total de Alunos',   cor: '#10b981' },
+  { icon: Users,         label: 'Alunos Ativos',     cor: '#059669' },
+  { icon: Users,         label: 'Total de Turmas',   cor: '#8b5cf6' },
+  { icon: Award,         label: 'Matrículas Ativas', cor: '#f59e0b' },
+  { icon: TrendingUp,    label: 'Taxa de Conclusão', cor: '#ec4899' },
+  { icon: TrendingUp,    label: 'Progresso Médio',   cor: '#0891b2' },
 ]
 
 
@@ -29,26 +34,21 @@ const acoes = [
 ]
 
 
-function Sparkline({ data, cor }: { data: number[]; cor: string }) {
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const w = 120, h = 36
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w
-    const y = h - ((v - min) / (max - min || 1)) * h
-    return `${x},${y}`
-  }).join(' ')
-  return (
-    <svg width={w} height={h} style={{ display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={cor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: string) => void; onLogout: () => void }) {
   const { C } = useTheme()
   const m = useMetricasAdmin()
   const { isMobile, isTablet, cols } = useBreakpoint()
+
+  // A série de admissões vive em /admin/indicadores (o dashboard usa
+  // /admin/metricas), então é uma chamada extra — mas é a única série do
+  // sistema com dispersão temporal real: data_admissao vem do RH.
+  const [admissoes, setAdmissoes] = useState<{ mes: string; total: number }[]>([])
+  useEffect(() => {
+    indicadoresAPI.buscar()
+      .then((d: any) => setAdmissoes(d?.admissoesPorMes ?? []))
+      .catch(err => console.error('Erro ao carregar admissões:', err))
+  }, [])
+  const admissoesData = admissoes.map(a => ({ mes: a.mes, total: Number(a.total) }))
 
   const valoresMetricas = [
     m.cursos.total,
@@ -107,9 +107,6 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end' }}>
-                  <Sparkline data={mt.spark} cor={mt.cor} />
-                </div>
               </div>
             ))}
           </div>
@@ -117,13 +114,28 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
           {/* ── LINHA 2: Gráfico + Atividades + Distribuição ── */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 320px' : '1fr 320px 280px', gap: '16px' }}>
 
-            {/* Gráfico Matrículas */}
+            {/* Admissões — título diz o que o dado é. A série é de
+                data_admissao (RH), não de matrícula nem de engajamento. */}
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: C.text, marginBottom: '12px' }}>Matrículas e Engajamento</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', color: C.muted, fontSize: '13px', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>📊</span>
-                <span>Gráfico de evolução — em desenvolvimento</span>
-              </div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: C.text, marginBottom: '12px' }}>Admissões nos últimos 12 meses</div>
+              {admissoesData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={admissoesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis dataKey="mes" tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: C.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '12px' }}
+                      formatter={(v: any) => [`${v} ${Number(v) === 1 ? 'admissão' : 'admissões'}`, '']}
+                    />
+                    <Line type="monotone" dataKey="total" stroke={C.blue} strokeWidth={2} dot={{ r: 3, fill: C.blue }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontSize: '13px' }}>
+                  Sem dados de admissão no período
+                </div>
+              )}
             </div>
 
             {/* Atividades Recentes */}

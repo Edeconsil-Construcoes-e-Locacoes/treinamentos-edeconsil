@@ -69,14 +69,10 @@ const modulos = [
   },
 ]
 
-const abasSobre = ['Sobre a Aula', 'Materiais', 'Anotações', 'Perguntas (12)']
-
-const materiaisAula = [
-  { nome: 'Apostila - Terraplanagem.pdf', tamanho: '2.4 MB' },
-  { nome: 'Exemplo de Projeto.dwg',       tamanho: '6.8 MB' },
-  { nome: 'Tabela de Volumes.xlsx',       tamanho: '1.1 MB' },
-  { nome: 'Lista de Verificação.pdf',     tamanho: '890 KB' },
-]
+// Só "Sobre a Aula" tem conteúdo; as outras ficam desabilitadas em vez de
+// abrir um vazio. O "(12)" de Perguntas era um contador inventado.
+const abasSobre = ['Sobre a Aula', 'Materiais', 'Anotações', 'Perguntas']
+const ABAS_ATIVAS = ['Sobre a Aula']
 
 const aprendizados = [
   'Como ler plantas topográficas',
@@ -281,11 +277,17 @@ export function MeusCursos({ onNavigate }: { onNavigate: (page: string) => void 
           {/* ABAS + CONTEÚDO */}
           <div style={{ padding: isSmall ? '12px' : '16px 20px', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: '0', borderBottom: `1px solid ${C.border}`, marginBottom: '16px', overflowX: isSmall ? 'auto' : 'visible' }}>
-              {abasSobre.map(aba => (
+              {abasSobre.map(aba => {
+                const habilitada = ABAS_ATIVAS.includes(aba)
+                return (
                 <button key={aba}
-                  onClick={() => setAbaAtiva(aba)}
+                  disabled={!habilitada}
+                  title={habilitada ? undefined : 'Ainda não disponível'}
+                  onClick={() => habilitada && setAbaAtiva(aba)}
                   style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
+                    background: 'none', border: 'none',
+                    cursor: habilitada ? 'pointer' : 'not-allowed',
+                    opacity: habilitada ? 1 : 0.45,
                     padding: '10px 16px',
                     fontSize: '13px', fontWeight: abaAtiva === aba ? 600 : 400,
                     color: abaAtiva === aba ? C.text : C.muted,
@@ -296,13 +298,14 @@ export function MeusCursos({ onNavigate }: { onNavigate: (page: string) => void 
                     fontFamily: "'Inter',sans-serif",
                   }}
                 >
-                  {aba === 'Sobre a Aula'  && <FileText size={13} />}
-                  {aba === 'Materiais'      && <Download size={13} />}
-                  {aba === 'Anotações'      && <Edit3 size={13} />}
-                  {aba === 'Perguntas (12)' && <MessageSquare size={13} />}
+                  {aba === 'Sobre a Aula' && <FileText size={13} />}
+                  {aba === 'Materiais'    && <Download size={13} />}
+                  {aba === 'Anotações'    && <Edit3 size={13} />}
+                  {aba === 'Perguntas'    && <MessageSquare size={13} />}
                   {aba}
                 </button>
-              ))}
+                )
+              })}
             </div>
 
             {abaAtiva === 'Sobre a Aula' && (
@@ -325,30 +328,16 @@ export function MeusCursos({ onNavigate }: { onNavigate: (page: string) => void 
                 <div style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '10px', padding: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: C.text }}>Materiais da Aula</span>
-                    <Download size={15} color={C.muted} style={{ cursor: 'pointer' }} />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {materiaisAula.map(m => (
-                      <div key={m.nome}
-                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', background: C.surface3, borderRadius: '8px', cursor: 'pointer', transition: 'background 150ms' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(26,86,255,0.08)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = C.surface3)}
-                      >
-                        <FileText size={14} color={C.blue} />
-                        <span style={{ flex: 1, fontSize: '12px', color: C.text }}>{m.nome}</span>
-                        <span style={{ fontSize: '11px', color: C.muted }}>{m.tamanho}</span>
-                      </div>
-                    ))}
+                  {/* Os 4 arquivos que ficavam aqui eram fixos no código
+                      (Terraplanagem.dwg etc) e não existiam no banco. */}
+                  <div style={{ fontSize: '12px', color: C.muted, padding: '4px 2px' }}>
+                    Nenhum material disponível
                   </div>
                 </div>
               </div>
             )}
 
-            {abaAtiva !== 'Sobre a Aula' && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '80px', color: C.muted, fontSize: '13px' }}>
-                Conteúdo de {abaAtiva} em breve
-              </div>
-            )}
           </div>
         </div>
       </div>
