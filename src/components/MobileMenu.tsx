@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu, X, Home, BookOpen, Award, FileText, BarChart2, LogOut, ChevronRight } from 'lucide-react'
+import { Menu, X, Home, BookOpen, Award, FileText, MessageSquare, LogOut, ChevronRight } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
@@ -25,7 +25,7 @@ export function MobileMenu({
     { label: 'Meus Cursos',   page: 'meusCursos',              icon: BookOpen   },
     { label: 'Certificados',  page: 'certificadosColaborador', icon: Award      },
     { label: 'Apostilas',     page: 'apostilas',               icon: FileText   },
-    { label: 'Meu Progresso', page: 'progresso',               icon: BarChart2  },
+    { label: 'Mensagens',     page: 'mensagens',               icon: MessageSquare },
     { label: 'Trilhas',       page: 'trilha',                  icon: ChevronRight },
   ]
 

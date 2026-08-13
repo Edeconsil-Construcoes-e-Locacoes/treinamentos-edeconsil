@@ -127,9 +127,6 @@ export default function Login({ onLogin }: LoginProps) {
           border-color: #1a56ff55 !important;
           background: #1a3060 !important;
         }
-        .esqueci-link:hover {
-          text-decoration: underline;
-        }
         .login-btn:disabled {
           cursor: not-allowed;
         }
@@ -463,13 +460,9 @@ export default function Login({ onLogin }: LoginProps) {
               <span style={{ fontSize: 13, color: '#8899aa' }}>Lembrar-me</span>
             </label>
 
-            <a
-              href="#"
-              className="esqueci-link"
-              style={{ fontSize: 13, color: '#1a56ff', textDecoration: 'none' }}
-            >
-              Esqueci minha senha
-            </a>
+            <span style={{ fontSize: 13, color: '#8899aa' }}>
+              Esqueceu? Contate o RH
+            </span>
           </div>
 
           {/* Erro de login */}

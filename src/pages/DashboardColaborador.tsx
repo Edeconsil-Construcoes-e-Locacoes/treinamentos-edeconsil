@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   BookOpen, ChevronRight,
   Play
@@ -11,25 +12,32 @@ import { useDadosReaisAluno } from '../hooks/useDadosReaisAluno'
 import { useUsuarioLogado } from '../hooks/useUsuarioLogado'
 
 
-const recomendados = [
-  { cor: '#1a56ff', titulo: 'Liderança em Obras',        info: '32 aulas · 10 matérias', page: '' },
-  { cor: '#10b981', titulo: 'Gestão Ambiental em Obras', info: '18 aulas · 6 matérias',  page: '' },
-  { cor: '#8b5cf6', titulo: 'EdeconQuiz — SIPAT 2026',   info: '20 questões · 15 min',   page: 'edeconQuiz' },
-]
-
-
 interface DashboardColaboradorProps {
   onLogout: () => void
   onNavigate: (page: string) => void
+  onAbrirCurso: (slug: string) => void
 }
 
-export function DashboardColaborador({ onLogout, onNavigate }: DashboardColaboradorProps) {
+export function DashboardColaborador({ onLogout, onNavigate, onAbrirCurso }: DashboardColaboradorProps) {
   const { C } = useTheme()
   const { isMobile, isTablet } = useResponsive()
   const isSmall = isMobile || isTablet
   const progressoReal = useDadosReaisAluno()
   const { nome, iniciais, perfil: perfilUsuario } = useUsuarioLogado()
   const roleDisplay = perfilUsuario === 'admin' ? 'Administrador' : 'Colaborador'
+
+  // Recomendados = cursos da trilha do aluno que ele ainda não abriu,
+  // os mais concluídos pelos colegas primeiro. progresso_assistido (parcial)
+  // e não progresso_usuario: quem já assistiu meia aula não é "não iniciado".
+  const recomendados = useMemo(() => (
+    [...progressoReal.cursos]
+      // `aprovado` também entra: curso sem aulas cadastradas fica com
+      // progresso_assistido 0 para sempre e voltaria a ser "recomendado"
+      // mesmo para quem já passou na prova e tirou o certificado.
+      .filter(c => c.progresso_assistido === 0 && c.aprovado !== true)
+      .sort((a, b) => b.conclusoes - a.conclusoes || a.titulo.localeCompare(b.titulo, 'pt-BR'))
+      .slice(0, 3)
+  ), [progressoReal.cursos])
 
   const metricas = [
     { label: 'Cursos ativos',   valor: String(progressoReal.totalCursos),        delta: '+2 este mês',                                  deltaColor: '#1a56ff' },
@@ -205,20 +213,30 @@ export function DashboardColaborador({ onLogout, onNavigate }: DashboardColabora
             {/* Recomendados */}
             <div style={{ background: 'rgba(26,86,255,0.08)', border: '0.5px solid rgba(26,86,255,0.20)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ fontSize: '14px', fontWeight: 600, color: C.text }}>Recomendados para você</div>
-              {recomendados.map(r => (
+              {recomendados.length === 0 ? (
+                <div style={{ fontSize: '11px', color: C.muted, padding: '8px 2px' }}>
+                  Nenhuma recomendação no momento
+                </div>
+              ) : recomendados.map(r => (
                 <div
-                  key={r.titulo}
-                  onClick={() => r.page && onNavigate(r.page)}
+                  key={r.id}
+                  onClick={() => onAbrirCurso(r.slug)}
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'rgba(26,86,255,0.06)', borderRadius: '8px', border: '0.5px solid rgba(26,86,255,0.12)', cursor: 'pointer', transition: 'all 150ms' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(26,86,255,0.35)')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(26,86,255,0.12)')}
                 >
-                  <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: r.cor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: r.cor ?? '#1a56ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <BookOpen size={14} color="#fff" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '12px', fontWeight: 500, color: C.text }}>{r.titulo}</div>
-                    <div style={{ fontSize: '10px', color: C.muted }}>{r.info}</div>
+                    <div style={{ fontSize: '10px', color: C.muted }}>
+                      {/* Curso sem aula cadastrada não mostra "0 aulas" */}
+                      {[
+                        r.total_aulas_real > 0 && `${r.total_aulas_real} ${r.total_aulas_real === 1 ? 'aula' : 'aulas'}`,
+                        r.conclusoes > 0 && `${r.conclusoes} ${r.conclusoes === 1 ? 'conclusão' : 'conclusões'}`,
+                      ].filter(Boolean).join(' · ') || 'Disponível para você'}
+                    </div>
                   </div>
                   <ChevronRight size={14} color={C.blue} />
                 </div>

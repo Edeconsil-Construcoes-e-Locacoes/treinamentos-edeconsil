@@ -353,6 +353,10 @@ if (pagina === 'configuracoesAdmin') return (
     <DashboardColaborador
       onLogout={handleLogout}
       onNavigate={(page) => setPagina(page as Pagina)}
+      onAbrirCurso={(id) => {
+        setCursoAtivoId(id)
+        setPagina('cursoDetalhe')
+      }}
     />
   )
 }

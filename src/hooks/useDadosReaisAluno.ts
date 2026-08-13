@@ -13,6 +13,10 @@ export interface CursoReal {
   total_aulas_real: number
   aulas_concluidas: number
   progresso_usuario: number
+  /** % assistido (parcial, conta aula em andamento). 0 = nunca abriu o curso. */
+  progresso_assistido: number
+  /** Quantas pessoas já concluíram este curso — usado para ordenar recomendações. */
+  conclusoes: number
   nota_obtida?: number | null
   aprovado?: boolean | null
   nota_minima?: number
@@ -77,6 +81,8 @@ export function useDadosReaisAluno(): DadosAluno {
           total_aulas_real:  Number(c.total_aulas_real ?? c.total_aulas ?? 0),
           aulas_concluidas:  Number(c.aulas_concluidas ?? 0),
           progresso_usuario: Number(c.progresso_usuario ?? c.progresso ?? 0),
+          progresso_assistido: Number(c.progresso_assistido ?? 0),
+          conclusoes:          Number(c.conclusoes ?? 0),
           nota_obtida:       c.nota_obtida ?? null,
           aprovado:          c.aprovado    ?? null,
           status:            c.status,
