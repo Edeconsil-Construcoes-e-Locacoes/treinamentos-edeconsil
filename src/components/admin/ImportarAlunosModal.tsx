@@ -82,7 +82,7 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
         data_nascimento: a.data_nascimento,
         data_admissao:   a.data_admissao,
         matricula:       a.matricula,
-        centro_custo:    a.centro_custo,
+        origem:          a.origem,       // coluna G — era centro_custo
       }))
 
       const res = await (usuariosAPI as any).importarCsv(payload) as ResultadoImportacao

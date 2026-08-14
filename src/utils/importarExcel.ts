@@ -82,6 +82,33 @@ export function resolverTurmaFrontend(nome: string | null | undefined, turmasDoB
   return parcial ?? null
 }
 
+// Coluna G — Origem. A coluna no banco é VARCHAR(20) SEM check constraint,
+// então qualquer texto entraria e só apareceria torto no badge e sumido do
+// filtro. Por isso a normalização é aqui, e o que não bater é rejeitado.
+const ORIGENS_OFICIAIS = ['Empregado', 'Parceiro', 'Terceiro'] as const
+
+const ALIASES_ORIGEM: Record<string, string> = {
+  'empregado':     'Empregado',
+  'clt':           'Empregado',
+  'proprio':       'Empregado',
+  'parceiro':      'Parceiro',
+  'parceira':      'Parceiro',
+  'parceria':      'Parceiro',
+  'terceiro':      'Terceiro',
+  'terceira':      'Terceiro',
+  'terceirizado':  'Terceiro',
+  'terceirizada':  'Terceiro',
+}
+
+/** Vazio → 'Empregado' (default da coluna). Irreconhecível → null (linha rejeitada). */
+export function resolverOrigem(valor: any): string | null {
+  const bruto = valor === null || valor === undefined ? '' : String(valor).trim()
+  if (!bruto) return 'Empregado'
+  const exato = ORIGENS_OFICIAIS.find(o => o === bruto)
+  if (exato) return exato
+  return ALIASES_ORIGEM[normalizarStr(bruto)] ?? null
+}
+
 export interface AlunoImportado {
   nome:             string
   cpf:              string
@@ -90,7 +117,7 @@ export interface AlunoImportado {
   data_admissao:    string | null
   matricula:        string | null
   data_nascimento:  string | null
-  centro_custo:     string | null
+  origem:           string | null  // coluna G — era Centro de Custo
   cpfLimpo:         string
   senhaInicial:     string | null
   erros:            string[]
@@ -183,14 +210,14 @@ export function lerPlanilhaExcel(arquivo: File, turmasDoBanco?: any[]): Promise<
           const admissaoRaw     = linha[3]
           const matriculaRaw    = linha[4]
           const dataNascRaw     = linha[5]
-          const centroCustoRaw  = linha[6]
+          const origemRaw       = linha[6]  // coluna G — Origem (era Centro de Custo)
           const setorRaw        = linha[7]  // coluna H — Setor/Turma (opcional)
 
           const cpfLimpo        = limparCpf(cpfRaw)
           const data_admissao   = converterData(admissaoRaw)
           const data_nascimento = converterData(dataNascRaw)
           const matricula       = matriculaRaw ? String(matriculaRaw).trim() : null
-          const centro_custo    = centroCustoRaw ? String(centroCustoRaw).trim() : null
+          const origem          = resolverOrigem(origemRaw)
           const setorStr        = setorRaw ? String(setorRaw).trim() : null
           const setor           = setorStr ? (resolverTurmaFrontend(setorStr, turmasDoBanco) ?? setorStr) : null
           const senhaInicial    = dataNascimentoParaSenha(data_nascimento)
@@ -200,6 +227,9 @@ export function lerPlanilhaExcel(arquivo: File, turmasDoBanco?: any[]): Promise<
           if (cpfLimpo.length !== 11)  erros.push(`CPF inválido: "${cpfRaw}" (${cpfLimpo.length} dígitos)`)
           if (!/^\d+$/.test(cpfLimpo)) erros.push('CPF contém letras')
           if (!data_nascimento)        erros.push('Data de nascimento inválida ou ausente')
+          // Rejeita em vez de cair no default: um Terceiro virando Empregado
+          // em silêncio é o tipo de erro que ninguém percebe depois.
+          if (origem === null)         erros.push(`Origem inválida: "${origemRaw}" (use Empregado, Parceiro ou Terceiro)`)
 
           alunos.push({
             nome,
@@ -209,7 +239,7 @@ export function lerPlanilhaExcel(arquivo: File, turmasDoBanco?: any[]): Promise<
             data_admissao,
             matricula,
             data_nascimento,
-            centro_custo,
+            origem,
             cpfLimpo,
             senhaInicial,
             erros,
