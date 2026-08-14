@@ -175,7 +175,7 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
               { col:'D', label:'Admissão',      obrig:false },
               { col:'E', label:'Mat',           obrig:false },
               { col:'F', label:'Dat. Nasc',     obrig:true  },
-              { col:'G', label:'Centro Custo',  obrig:false },
+              { col:'G', label:'Origem',        obrig:false },
               { col:'H', label:'Setor/Turma',   obrig:false },
             ].map(c => (
               <div key={c.col} style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 8px', background:C.surface, borderRadius:'6px', border:`0.5px solid ${C.border}` }}>

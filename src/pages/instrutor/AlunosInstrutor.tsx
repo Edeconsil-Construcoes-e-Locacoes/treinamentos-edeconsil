@@ -604,7 +604,7 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
                   Importar Alunos — Planilha Excel
                 </h2>
                 <p style={{ fontSize:'12px', color:C.muted, margin:0 }}>
-                  Colunas: Nome · CPF · Cargo · Admissão · Mat · Dat. Nasc · Centro de Custo
+                  Colunas: Nome · CPF · Cargo · Admissão · Mat · Dat. Nasc · Origem · Setor/Turma
                 </p>
               </div>
               <button
