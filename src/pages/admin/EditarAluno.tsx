@@ -5,6 +5,9 @@ import { usuariosAPI, turmasAPI, cargosAPI } from '../../services/api'
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 
+/** "1988-12-30T03:00:00.000Z" ou "1988-12-30" → "1988-12-30" (o que o input type=date aceita). */
+const soData = (v: any) => (v ? String(v).slice(0, 10) : '')
+
 interface EditarAlunoProps {
   aluno: any
   onFechar:  () => void
@@ -62,19 +65,12 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
     setEmpresaTerceiro(aluno.empresa_terceiro ?? '')
     setFotoPreview(null)
 
-    if (aluno.data_admissao) {
-      const d = new Date(aluno.data_admissao)
-      if (!isNaN(d.getTime())) {
-        setDataAdmissao(d.toISOString().split('T')[0])
-      }
-    }
-
-    if (aluno.data_nascimento) {
-      const dn = new Date(aluno.data_nascimento + 'T00:00:00')
-      if (!isNaN(dn.getTime())) {
-        setDataNascimento(dn.toISOString().split('T')[0])
-      }
-    }
+    // A data vem do backend como ISO com hora ("1988-12-30T03:00:00.000Z"):
+    // node-pg converte DATE em objeto Date e o JSON serializa por inteiro.
+    // Fatiar a string é imune a fuso — reconstruir um Date e voltar para
+    // ISO só funciona porque o Brasil está atrás do UTC.
+    setDataAdmissao(soData(aluno.data_admissao))
+    setDataNascimento(soData(aluno.data_nascimento))
   }, [aluno])
 
   const stopKeys = useCallback((e: React.KeyboardEvent) => e.stopPropagation(), [])
@@ -176,7 +172,7 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
             {aluno?.data_nascimento && (
               <span style={{ fontSize: '11px', color: C.muted }}>
                 Nasc: <strong style={{ color: C.text }}>
-                  {new Date(aluno.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  {new Date(soData(aluno.data_nascimento) + 'T00:00:00').toLocaleDateString('pt-BR')}
                 </strong>
               </span>
             )}

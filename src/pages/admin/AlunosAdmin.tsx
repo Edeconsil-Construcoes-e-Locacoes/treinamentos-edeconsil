@@ -73,7 +73,13 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
       const resp = await usuariosAPI.listar({ limite: '500', perfil: 'colaborador' }) as any
       // API retorna { usuarios: [], total: N } — não um array direto
       const lista: any[] = Array.isArray(resp) ? resp : (resp?.usuarios ?? [])
+      // O `...u` preserva o que a API manda e a normalização não cobre:
+      // data_nascimento, data_admissao, cpf, origem, turma_id, foto_url,
+      // celular, ramal, centro_custo. Sem ele o objeto chegava podado ao
+      // modal de edição (campos vazios) e quebrava os filtros de origem e
+      // turma, que comparam campos que nem existiam mais.
       const normalizados: Aluno[] = lista.map((u: any) => ({
+        ...u,
         id:        String(u.id),
         nome:      u.nome ?? '—',
         email:     u.email ?? '—',

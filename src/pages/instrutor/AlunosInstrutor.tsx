@@ -82,7 +82,10 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
     try {
       const resp = await usuariosAPI.listar({ limite: '500', perfil: 'colaborador', turma_id: turmaId }) as any
       const lista: any[] = Array.isArray(resp) ? resp : (resp?.usuarios ?? [])
+      // Mesma correção do AlunosAdmin: sem o `...u` o objeto ia podado para
+      // o modal de edição e os filtros de origem/turma nunca casavam.
       const normalizados: Aluno[] = lista.map((u: any) => ({
+        ...u,
         id:        String(u.id),
         nome:      u.nome ?? '—',
         email:     u.email ?? '—',
