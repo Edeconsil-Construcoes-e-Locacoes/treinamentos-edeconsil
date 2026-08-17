@@ -276,6 +276,19 @@ export const instrutoresAPI = {
 
   excluir: (id: string) =>
     apiRequest(`/instrutores/${id}`, { method: 'DELETE' }),
+
+  /** Promove um colaborador existente (perfil muda para instrutor). */
+  promover: (dados: {
+    usuario_id: string
+    especialidade: string
+    telefone?: string
+    bio?: string
+    foto_url?: string
+  }) =>
+    apiRequest<{ instrutor: any; turma_transferida_de: string | null }>(
+      '/admin/instrutores/promover',
+      { method: 'POST', body: JSON.stringify(dados) }
+    ),
 }
 
 export const meuInstrutorAPI = {

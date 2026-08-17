@@ -4,6 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { instrutoresAPI } from '../../services/api'
 import { EditarInstrutor } from './EditarInstrutor'
+import { ModalNovoInstrutor } from '../../components/admin/ModalNovoInstrutor'
 import { useBreakpoint } from '../../hooks/useMobile'
 
 interface InstrutoresAdminProps {
@@ -20,6 +21,7 @@ export function InstrutoresAdmin({ onNavigate, onLogout }: InstrutoresAdminProps
   const [busca,          setBusca]          = useState('')
   const [modalEditar,    setModalEditar]    = useState<any>(null)
   const [modalCriar,     setModalCriar]     = useState(false)
+  const [avisoTurma,     setAvisoTurma]     = useState<string | null>(null)
   const [confirmExcluir, setConfirmExcluir] = useState<any>(null)
   const [erroAcao,       setErroAcao]       = useState('')
 
@@ -382,18 +384,37 @@ export function InstrutoresAdmin({ onNavigate, onLogout }: InstrutoresAdminProps
         )}
       </div>
 
-      {/* Modal Criar */}
+      {/* Modal Criar — promover colaborador (principal) ou cadastrar externo */}
       {modalCriar && (
         <Modal
           titulo="Novo Instrutor"
-          subtitulo="Cadastrar instrutor na plataforma"
+          subtitulo="Promova um colaborador ou cadastre um instrutor externo"
           onFechar={() => setModalCriar(false)}
         >
-          <EditarInstrutor
+          <ModalNovoInstrutor
             onFechar={() => setModalCriar(false)}
-            onSucesso={() => { setModalCriar(false); carregar(busca) }}
+            onSucesso={(avisoTurma) => {
+              setModalCriar(false)
+              carregar(busca)
+              if (avisoTurma) setAvisoTurma(avisoTurma)
+            }}
           />
         </Modal>
+      )}
+
+      {/* Aviso de turma reatribuída — o instrutor anterior perdeu a turma */}
+      {avisoTurma && (
+        <div
+          onClick={() => setAvisoTurma(null)}
+          style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1200, maxWidth: '340px', padding: '12px 16px', background: C.surface, border: '1px solid #f59e0b', borderLeft: '4px solid #f59e0b', borderRadius: '10px', boxShadow: '0 10px 30px rgba(0,0,0,0.25)', cursor: 'pointer' }}
+        >
+          <p style={{ fontSize: '12px', fontWeight: 700, color: C.text, margin: '0 0 3px' }}>
+            Turma reatribuída
+          </p>
+          <p style={{ fontSize: '12px', color: C.muted, margin: 0, lineHeight: 1.5 }}>
+            A turma dessa especialidade era de <strong style={{ color: C.text }}>{avisoTurma}</strong> e passou para o novo instrutor.
+          </p>
+        </div>
       )}
 
       {/* Modal Editar */}
