@@ -167,11 +167,16 @@ function dataNascimentoParaSenha(dataIso: string | null): string | null {
 function limparCpf(valor: any): string {
   if (!valor) return ''
   const so = String(valor).replace(/[.\-\s]/g, '').trim()
-  // Excel guarda CPF como número e come o zero à esquerda: 06521190342 vira
-  // 6521190342. Completa só a 10 dígitos — abaixo disso é dado faltando de
-  // verdade e a linha continua rejeitada. O regex (em vez de length === 10)
-  // impede completar algo como "abc1234567", que cai na checagem de letras.
-  return /^\d{10}$/.test(so) ? so.padStart(11, '0') : so
+  // Excel guarda CPF como número e come os zeros à esquerda. Com 1, 2 ou 3
+  // zeros na frente, o valor chega com 10, 9 ou 8 dígitos. Nos 99 CPFs reais
+  // do cadastro: 25 têm 1 zero, 6 têm 2, 3 têm 3 — e nenhum tem 4 ou mais,
+  // então 8 é um piso seguro. Abaixo disso é dado faltando de verdade e a
+  // linha continua caindo na validação de tamanho.
+  // O dígito verificador (cpfValido, aplicado depois sobre os 11 dígitos) é
+  // a rede: número completado que não formar CPF válido é rejeitado.
+  // O regex (em vez de length) impede completar algo como "abc1234567",
+  // que cai na checagem de letras.
+  return /^\d{8,10}$/.test(so) ? so.padStart(11, '0') : so
 }
 
 /**
