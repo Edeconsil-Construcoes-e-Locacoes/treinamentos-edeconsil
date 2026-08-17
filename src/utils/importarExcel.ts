@@ -166,7 +166,31 @@ function dataNascimentoParaSenha(dataIso: string | null): string | null {
 
 function limparCpf(valor: any): string {
   if (!valor) return ''
-  return String(valor).replace(/[.\-\s]/g, '').trim()
+  const so = String(valor).replace(/[.\-\s]/g, '').trim()
+  // Excel guarda CPF como número e come o zero à esquerda: 06521190342 vira
+  // 6521190342. Completa só a 10 dígitos — abaixo disso é dado faltando de
+  // verdade e a linha continua rejeitada. O regex (em vez de length === 10)
+  // impede completar algo como "abc1234567", que cai na checagem de letras.
+  return /^\d{10}$/.test(so) ? so.padStart(11, '0') : so
+}
+
+/**
+ * Dígitos verificadores do CPF. Necessário porque completar o zero à esquerda
+ * assume que faltou justamente um zero — sem esta checagem, um CPF digitado
+ * com um dígito a menos no meio viraria um CPF de tamanho certo e conteúdo
+ * errado, e o CPF é a credencial de login e a chave de deduplicação.
+ */
+function cpfValido(cpf: string): boolean {
+  if (!/^\d{11}$/.test(cpf)) return false
+  if (/^(\d)\1{10}$/.test(cpf)) return false // 111.111.111-11 e afins passam na conta
+  let soma = 0
+  for (let i = 0; i < 9; i++) soma += parseInt(cpf[i]) * (10 - i)
+  let d1 = 11 - (soma % 11); if (d1 >= 10) d1 = 0
+  if (d1 !== parseInt(cpf[9])) return false
+  soma = 0
+  for (let i = 0; i < 10; i++) soma += parseInt(cpf[i]) * (11 - i)
+  let d2 = 11 - (soma % 11); if (d2 >= 10) d2 = 0
+  return d2 === parseInt(cpf[10])
 }
 
 export function lerPlanilhaExcel(arquivo: File, turmasDoBanco?: any[]): Promise<AlunoImportado[]> {
@@ -226,6 +250,10 @@ export function lerPlanilhaExcel(arquivo: File, turmasDoBanco?: any[]): Promise<
           if (!nome)                   erros.push('Nome vazio')
           if (cpfLimpo.length !== 11)  erros.push(`CPF inválido: "${cpfRaw}" (${cpfLimpo.length} dígitos)`)
           if (!/^\d+$/.test(cpfLimpo)) erros.push('CPF contém letras')
+          // Só roda se as duas checagens acima passaram — evita empilhar
+          // dois erros de CPF na mesma linha.
+          if (cpfLimpo.length === 11 && /^\d+$/.test(cpfLimpo) && !cpfValido(cpfLimpo))
+            erros.push('CPF inválido - verifique os dígitos')
           if (!data_nascimento)        erros.push('Data de nascimento inválida ou ausente')
           // Rejeita em vez de cair no default: um Terceiro virando Empregado
           // em silêncio é o tipo de erro que ninguém percebe depois.
