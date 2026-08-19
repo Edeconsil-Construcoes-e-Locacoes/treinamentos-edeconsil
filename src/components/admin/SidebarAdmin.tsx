@@ -1,7 +1,7 @@
 import { useTheme } from '../../contexts/ThemeContext'
 import { Logo } from '../Logo'
 import {
-  BarChart2, Grid3x3,
+  BarChart2, Grid3x3, BookOpen,
   MessageSquare, LogOut
 } from 'lucide-react'
 
@@ -77,6 +77,26 @@ export function SidebarAdmin({ paginaAtiva, onNavigate, onLogout }: SidebarAdmin
           <BarChart2 size={15} color={paginaAtiva === 'admin' ? '#fff' : C.muted} />
           <span style={{ fontSize: '13px', fontWeight: 600, color: paginaAtiva === 'admin' ? '#fff' : C.muted2 }}>
             Dashboard
+          </span>
+        </div>
+      </div>
+
+      {/* Minhas Aulas — o admin também faz cursos e tira certificado */}
+      <div style={{ padding: '0 8px 4px', flexShrink: 0 }}>
+        <div
+          onClick={() => onNavigate('minhasAulas')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
+            background: paginaAtiva === 'minhasAulas' ? C.blue : 'transparent',
+            transition: 'all 150ms',
+          }}
+          onMouseEnter={e => { if (paginaAtiva !== 'minhasAulas') e.currentTarget.style.background = 'rgba(26,86,255,0.08)' }}
+          onMouseLeave={e => { if (paginaAtiva !== 'minhasAulas') e.currentTarget.style.background = 'transparent' }}
+        >
+          <BookOpen size={15} color={paginaAtiva === 'minhasAulas' ? '#fff' : C.muted} />
+          <span style={{ fontSize: '13px', fontWeight: 600, color: paginaAtiva === 'minhasAulas' ? '#fff' : C.muted2 }}>
+            Minhas Aulas
           </span>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
 
 const navInstrutor = [
   { label: 'Início',        page: 'dashboardInstrutor',    icon: LayoutDashboard },
+  { label: 'Minhas Aulas',  page: 'minhasAulas',           icon: GraduationCap   },
   { label: 'Minha Turma',   page: 'turmaInstrutor',        icon: Users           },
   { label: 'Alunos',        page: 'alunosInstrutor',       icon: GraduationCap   },
   { label: 'Cursos',        page: 'cursosInstrutor',       icon: BookOpen        },

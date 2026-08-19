@@ -15,9 +15,12 @@ import { CursoDetalheConteudo } from '../pages/admin/CursoDetalheConteudo'
 import { CertificadosInstrutor } from '../pages/instrutor/CertificadosInstrutor'
 import { IndicadoresInstrutor } from '../pages/instrutor/IndicadoresInstrutor'
 import { NotificacoesInstrutor } from '../pages/instrutor/NotificacoesInstrutor'
+import { MeusCursosConteudo } from '../pages/MeusCursosConteudo'
+import { FluxoCursoAluno } from '../pages/FluxoCursoAluno'
 
 type PaginaInstrutor =
   | 'dashboardInstrutor'
+  | 'minhasAulas'
   | 'turmaInstrutor'
   | 'alunosInstrutor'
   | 'cursosInstrutor'
@@ -34,6 +37,7 @@ interface PainelInstrutorProps {
 
 const TITULOS: Record<PaginaInstrutor, string> = {
   dashboardInstrutor:      'Painel do Instrutor',
+  minhasAulas:             'Minhas Aulas',
   turmaInstrutor:          'Minha Turma',
   alunosInstrutor:         'Alunos',
   cursosInstrutor:         'Cursos',
@@ -52,6 +56,8 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
   const { nome } = useUsuarioLogado()
   const [pagina, setPagina] = useState<PaginaInstrutor>('dashboardInstrutor')
   const [cursoAtivoId, setCursoAtivoId] = useState('')
+  // Curso aberto por "Minhas Aulas": o fluxo do aluno ocupa a tela inteira.
+  const [cursoAluno, setCursoAluno] = useState<string | null>(null)
   const [sidebarAberta, setSidebarAberta] = useState(false)
 
   function navegar(p: string) {
@@ -61,6 +67,8 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
 
   function renderConteudo() {
     switch (pagina) {
+      case 'minhasAulas':
+        return <MeusCursosConteudo onAbrirCurso={(slug) => setCursoAluno(slug)} />
       case 'dashboardInstrutor':
         return <DashboardInstrutor onNavigate={navegar} />
       case 'turmaInstrutor':
@@ -98,6 +106,18 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
       default:
         return <DashboardInstrutor onNavigate={navegar} />
     }
+  }
+
+  // Curso aberto em "Minhas Aulas": o fluxo do aluno toma a tela inteira
+  // (as telas dele trazem o proprio layout). Sair devolve ao painel.
+  if (cursoAluno) {
+    return (
+      <FluxoCursoAluno
+        cursoSlug={cursoAluno}
+        onSair={() => setCursoAluno(null)}
+        onLogout={onLogout}
+      />
+    )
   }
 
   return (
