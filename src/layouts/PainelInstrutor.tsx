@@ -58,6 +58,7 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
   const [cursoAtivoId, setCursoAtivoId] = useState('')
   // Curso aberto por "Minhas Aulas": o fluxo do aluno ocupa a tela inteira.
   const [cursoAluno, setCursoAluno] = useState<string | null>(null)
+  const [etapaCurso, setEtapaCurso] = useState<'detalhe' | 'video' | 'prova'>('detalhe')
   const [sidebarAberta, setSidebarAberta] = useState(false)
 
   function navegar(p: string) {
@@ -65,10 +66,27 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
     setSidebarAberta(false)
   }
 
+  // Em "Minhas Aulas" o titulo acompanha a etapa do curso aberto.
+  const tituloAtual = pagina === 'minhasAulas' && cursoAluno
+    ? (etapaCurso === 'video' ? 'Vídeo Aula' : 'Detalhes do Curso')
+    : TITULOS[pagina]
+
   function renderConteudo() {
     switch (pagina) {
       case 'minhasAulas':
-        return <MeusCursosConteudo onAbrirCurso={(slug) => setCursoAluno(slug)} />
+        // Curso aberto: o fluxo entra na area de conteudo, com a sidebar do
+        // painel por fora. A prova sobe como overlay (ver FluxoCursoAluno).
+        return cursoAluno ? (
+          <FluxoCursoAluno
+            embutido
+            cursoSlug={cursoAluno}
+            onSair={() => { setCursoAluno(null); setEtapaCurso('detalhe') }}
+            onLogout={onLogout}
+            onEtapaChange={setEtapaCurso}
+          />
+        ) : (
+          <MeusCursosConteudo onAbrirCurso={(slug) => setCursoAluno(slug)} />
+        )
       case 'dashboardInstrutor':
         return <DashboardInstrutor onNavigate={navegar} />
       case 'turmaInstrutor':
@@ -106,18 +124,6 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
       default:
         return <DashboardInstrutor onNavigate={navegar} />
     }
-  }
-
-  // Curso aberto em "Minhas Aulas": o fluxo do aluno toma a tela inteira
-  // (as telas dele trazem o proprio layout). Sair devolve ao painel.
-  if (cursoAluno) {
-    return (
-      <FluxoCursoAluno
-        cursoSlug={cursoAluno}
-        onSair={() => setCursoAluno(null)}
-        onLogout={onLogout}
-      />
-    )
   }
 
   return (
@@ -181,12 +187,12 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
               <Menu size={22} color={C.text} />
             </button>
             <span style={{ fontSize: '15px', fontWeight: 700, color: C.text }}>
-              {TITULOS[pagina]}
+              {tituloAtual}
             </span>
           </div>
         ) : (
           <TopbarAdmin
-            titulo={TITULOS[pagina]}
+            titulo={tituloAtual}
             onNavigate={navegar}
           />
         )}

@@ -22,12 +22,15 @@ interface VideoAulaColaboradorProps {
   onVoltarLista: () => void
   onVoltarDetalhe: (cursoId: string) => void
   onTrocarAula: (cursoId: string, moduloId: number, aulaId: number) => void
+  /** Dentro do painel de admin/instrutor: só o conteúdo, sem sidebar/topbar do aluno. */
+  embutido?: boolean
 }
 
 export function VideoAulaColaborador({
   cursoId, moduloId, aulaId,
   onNavigate, onLogout,
-  onVoltarLista, onVoltarDetalhe, onTrocarAula
+  onVoltarLista, onVoltarDetalhe, onTrocarAula,
+  embutido = false,
 }: VideoAulaColaboradorProps) {
   const { C } = useTheme()
 
@@ -190,7 +193,7 @@ export function VideoAulaColaborador({
 
   if (carregando || !dados || !dados.modulos.length) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
+      <div style={{ display: 'flex', height: embutido ? '100%' : '100vh', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
         <span style={{ fontSize: '14px', color: C.muted }}>{carregando ? 'Carregando...' : 'Nenhuma aula disponível.'}</span>
       </div>
     )
@@ -224,11 +227,20 @@ export function VideoAulaColaborador({
       )
     : 0
 
+  // Sem `embutido`, JSX identico ao de antes (caminho do colaborador).
+  const Moldura = ({ children }: { children: React.ReactNode }) =>
+    embutido ? <>{children}</> : (
+      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Topbar titulo="Vídeo Aula" subtitulo="Conteúdo em vídeo" onNavigate={onNavigate} />
+          {children}
+        </main>
+      </div>
+    )
+
   return (
-    <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Topbar titulo="Vídeo Aula" subtitulo="Conteúdo em vídeo" onNavigate={onNavigate} />
+    <Moldura>
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
           {/* ── ÁREA CENTRAL ── */}
@@ -631,7 +643,6 @@ export function VideoAulaColaborador({
           </div>
 
         </div>
-      </main>
-    </div>
+    </Moldura>
   )
 }

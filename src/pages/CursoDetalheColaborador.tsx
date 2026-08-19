@@ -17,10 +17,14 @@ interface CursoDetalheColaboradorProps {
   onVoltarLista: () => void
   onAbrirAula: (cursoId: string, moduloId: number, aulaId: number) => void
   onAbrirProva: (cursoId: string, titulo?: string) => void
+  /** Dentro do painel de admin/instrutor: devolve só o conteúdo, sem a
+   *  sidebar e a topbar do aluno (o painel já tem as suas). */
+  embutido?: boolean
 }
 
 export function CursoDetalheColaborador({
-  cursoId, onNavigate, onLogout, onVoltarLista, onAbrirAula, onAbrirProva
+  cursoId, onNavigate, onLogout, onVoltarLista, onAbrirAula, onAbrirProva,
+  embutido = false,
 }: CursoDetalheColaboradorProps) {
   const { C } = useTheme()
 
@@ -110,18 +114,28 @@ export function CursoDetalheColaborador({
 
   if (carregando || !cursoDados) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
+      <div style={{ display: 'flex', height: embutido ? '100%' : '100vh', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
         <span style={{ fontSize: '14px', color: C.muted }}>Carregando...</span>
       </div>
     )
   }
   const curso = cursoDados
 
+  // Sem `embutido` o JSX e exatamente o de antes — e o caminho do colaborador,
+  // montado direto pelo App.tsx, que nao pode mudar.
+  const Moldura = ({ children }: { children: React.ReactNode }) =>
+    embutido ? <>{children}</> : (
+      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Topbar titulo="Detalhes do Curso" subtitulo="Conteúdo e progresso" onNavigate={onNavigate} />
+          {children}
+        </main>
+      </div>
+    )
+
   return (
-    <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Topbar titulo="Detalhes do Curso" subtitulo="Conteúdo e progresso" onNavigate={onNavigate} />
+    <Moldura>
         <div style={{ flex: 1, overflowY: 'auto' }}>
 
           {/* Breadcrumb */}
@@ -432,7 +446,6 @@ export function CursoDetalheColaborador({
 
           </div>
         </div>
-      </main>
-    </div>
+    </Moldura>
   )
 }

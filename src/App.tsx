@@ -121,6 +121,7 @@ function AppContent() {
   const [navKey, setNavKey] = useState(0)
   // Curso aberto pelo admin em "Minhas Aulas" (fluxo do aluno em tela cheia).
   const [cursoAluno, setCursoAluno] = useState<string | null>(null)
+  const [etapaCurso, setEtapaCurso] = useState<'detalhe' | 'video' | 'prova'>('detalhe')
 
   const handleLogout = () => {
     limparSessao()
@@ -145,23 +146,27 @@ function AppContent() {
   }
 
   if (perfil === 'admin') {
-    // Fluxo do aluno em tela cheia; sair devolve para a lista no painel.
-    if (cursoAluno) return (
-      <FluxoCursoAluno
-        cursoSlug={cursoAluno}
-        onSair={() => setCursoAluno(null)}
-        onLogout={handleLogout}
-      />
-    )
     if (pagina === 'minhasAulas') return (
       <LayoutAdmin
         paginaAtiva="minhasAulas"
         onNavigate={(p) => setPagina(p as Pagina)}
         onLogout={handleLogout}
-        topbarTitulo="Minhas Aulas"
-        topbarSubtitulo="Cursos disponíveis para você fazer e se certificar."
+        topbarTitulo={cursoAluno ? (etapaCurso === 'video' ? 'Vídeo Aula' : 'Detalhes do Curso') : 'Minhas Aulas'}
+        topbarSubtitulo={cursoAluno ? 'Conteúdo e progresso' : 'Cursos disponíveis para você fazer e se certificar.'}
       >
-        <MeusCursosConteudo onAbrirCurso={(slug) => setCursoAluno(slug)} />
+        {/* Curso aberto: o fluxo entra aqui, com a sidebar do ADMIN por fora.
+            A prova sobe como overlay em tela cheia (ver FluxoCursoAluno). */}
+        {cursoAluno ? (
+          <FluxoCursoAluno
+            embutido
+            cursoSlug={cursoAluno}
+            onSair={() => { setCursoAluno(null); setEtapaCurso('detalhe') }}
+            onLogout={handleLogout}
+            onEtapaChange={setEtapaCurso}
+          />
+        ) : (
+          <MeusCursosConteudo onAbrirCurso={(slug) => setCursoAluno(slug)} />
+        )}
       </LayoutAdmin>
     )
     if (pagina === 'cursosAdmin') return (

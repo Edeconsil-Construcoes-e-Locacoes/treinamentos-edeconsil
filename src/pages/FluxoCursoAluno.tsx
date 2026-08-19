@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CursoDetalheColaborador } from './CursoDetalheColaborador'
 import { VideoAulaColaborador } from './VideoAulaColaborador'
 import { ProvaOnline } from './ProvaOnline'
 
 interface FluxoCursoAlunoProps {
   cursoSlug: string
+  /** Dentro do painel: detalhe e vídeo saem sem sidebar própria. A PROVA
+   *  continua em tela cheia de propósito — menos poluição e menos rota de
+   *  fuga acidental durante a avaliação. */
+  embutido?: boolean
+  /** Informa a etapa ao painel, para ele ajustar o título da topbar. */
+  onEtapaChange?: (etapa: 'detalhe' | 'video' | 'prova') => void
   /** Volta para o painel de onde veio (admin ou instrutor). */
   onSair: () => void
   onLogout: () => void
@@ -21,7 +27,7 @@ interface FluxoCursoAlunoProps {
  * do aluno, por exemplo) devolve ao painel via onSair, que é o comportamento
  * previsível para quem entrou por "Minhas Aulas".
  */
-export function FluxoCursoAluno({ cursoSlug, onSair, onLogout }: FluxoCursoAlunoProps) {
+export function FluxoCursoAluno({ cursoSlug, onSair, onLogout, embutido = false, onEtapaChange }: FluxoCursoAlunoProps) {
   const [etapa, setEtapa]           = useState<'detalhe' | 'video' | 'prova'>('detalhe')
   const [cursoId, setCursoId]       = useState(cursoSlug)
   const [moduloId, setModuloId]     = useState<number>(1)
@@ -31,8 +37,13 @@ export function FluxoCursoAluno({ cursoSlug, onSair, onLogout }: FluxoCursoAluno
   // Remonta o detalhe ao voltar, para o progresso recém-salvo aparecer.
   const [navKey, setNavKey]         = useState(0)
 
+  useEffect(() => { onEtapaChange?.(etapa) }, [etapa, onEtapaChange])
+
   if (etapa === 'prova') {
-    return (
+    // A prova monta o proprio layout de 100vh. Dentro do painel ela ficaria
+    // espremida na area de conteudo, entao sobe como overlay fixo por cima —
+    // e assim a avaliacao ocupa a tela inteira, que e o comportamento pedido.
+    const prova = (
       <ProvaOnline
         cursoSlug={provaSlug}
         cursoTitulo={provaTitulo}
@@ -45,11 +56,15 @@ export function FluxoCursoAluno({ cursoSlug, onSair, onLogout }: FluxoCursoAluno
         }}
       />
     )
+    return embutido
+      ? <div style={{ position: 'fixed', inset: 0, zIndex: 1500 }}>{prova}</div>
+      : prova
   }
 
   if (etapa === 'video') {
     return (
       <VideoAulaColaborador
+        embutido={embutido}
         cursoId={cursoId}
         moduloId={moduloId}
         aulaId={aulaId}
@@ -72,6 +87,7 @@ export function FluxoCursoAluno({ cursoSlug, onSair, onLogout }: FluxoCursoAluno
 
   return (
     <CursoDetalheColaborador
+      embutido={embutido}
       key={navKey}
       cursoId={cursoId}
       onNavigate={onSair}
