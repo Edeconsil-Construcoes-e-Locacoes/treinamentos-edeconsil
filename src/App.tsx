@@ -119,7 +119,7 @@ function AppContent() {
   const [cursoProvaSlug, setCursoProvaSlug]     = useState('coord-suprimentos')
   const [cursoProvaTitulo, setCursoProvaTitulo] = useState('Coordenação de Suprimentos')
   const [navKey, setNavKey] = useState(0)
-  // Curso aberto pelo admin em "Minhas Aulas" (fluxo do aluno em tela cheia).
+  // Curso aberto pelo admin em "Minhas Aulas" (fluxo do aluno dentro do painel).
   const [cursoAluno, setCursoAluno] = useState<string | null>(null)
   const [etapaCurso, setEtapaCurso] = useState<'detalhe' | 'video' | 'prova'>('detalhe')
 
@@ -151,11 +151,17 @@ function AppContent() {
         paginaAtiva="minhasAulas"
         onNavigate={(p) => setPagina(p as Pagina)}
         onLogout={handleLogout}
-        topbarTitulo={cursoAluno ? (etapaCurso === 'video' ? 'Vídeo Aula' : 'Detalhes do Curso') : 'Minhas Aulas'}
-        topbarSubtitulo={cursoAluno ? 'Conteúdo e progresso' : 'Cursos disponíveis para você fazer e se certificar.'}
+        topbarTitulo={cursoAluno
+          ? (etapaCurso === 'prova' ? 'Prova Online'
+            : etapaCurso === 'video' ? 'Vídeo Aula'
+            : 'Detalhes do Curso')
+          : 'Minhas Aulas'}
+        topbarSubtitulo={cursoAluno
+          ? (etapaCurso === 'prova' ? 'Responda com atenção' : 'Conteúdo e progresso')
+          : 'Cursos disponíveis para você fazer e se certificar.'}
       >
-        {/* Curso aberto: o fluxo entra aqui, com a sidebar do ADMIN por fora.
-            A prova sobe como overlay em tela cheia (ver FluxoCursoAluno). */}
+        {/* Curso aberto: detalhe, vídeo e prova entram aqui, com a sidebar
+            do ADMIN por fora. */}
         {cursoAluno ? (
           <FluxoCursoAluno
             embutido

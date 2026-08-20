@@ -38,6 +38,9 @@ interface ResultadoProva {
 
 interface ProvaOnlineProps {
   cursoSlug: string
+  /** Dentro do painel de admin/instrutor: só o conteúdo, sem a sidebar e a
+   *  topbar do aluno (o painel já tem as suas). */
+  embutido?: boolean
   cursoTitulo: string
   onNavigate: (page: string) => void
   onLogout: () => void
@@ -47,6 +50,7 @@ interface ProvaOnlineProps {
 export function ProvaOnline({
   cursoSlug,
   cursoTitulo,
+  embutido = false,
   onNavigate,
   onLogout,
   onVoltarDetalhe,
@@ -146,27 +150,55 @@ export function ProvaOnline({
   const totalRespondidas = Object.keys(respostas).length
   const timerCritico     = tempoRestante < 5 * 60
 
+  // Sem `embutido` a moldura e byte a byte a de antes — e o caminho do
+  // colaborador, montado direto pelo App.tsx. Os 5 returns da prova usam duas
+  // variantes: centralizada (carregando/erro, sem Topbar) e em coluna (com
+  // Topbar e titulo proprio).
+  const Moldura = ({ children, titulo, subtitulo, centralizado = false }: {
+    children: React.ReactNode; titulo?: string; subtitulo?: string; centralizado?: boolean
+  }) => {
+    if (embutido) {
+      return centralizado
+        ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>{children}</div>
+        : <>{children}</>
+    }
+    if (centralizado) {
+      return (
+        <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, display: 'flex', height: '100vh' }}>
+          <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
+          <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {children}
+          </main>
+        </div>
+      )
+    }
+    return (
+      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
+        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
+        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Topbar titulo={titulo ?? ''} subtitulo={subtitulo} onNavigate={onNavigate} />
+          {children}
+        </main>
+      </div>
+    )
+  }
+
   // ── LOADING ──
   if (carregando) {
     return (
-      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, display: 'flex', height: '100vh' }}>
-        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Moldura centralizado>
           <div style={{ textAlign: 'center', color: C.muted }}>
             <div style={{ width: '40px', height: '40px', border: `3px solid ${C.border}`, borderTopColor: C.blue, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
             <p>Carregando prova...</p>
           </div>
-        </main>
-      </div>
+      </Moldura>
     )
   }
 
   // ── ERRO ──
   if (erro) {
     return (
-      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, display: 'flex', height: '100vh' }}>
-        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Moldura centralizado>
           <div style={{ textAlign: 'center', maxWidth: '400px', padding: '32px' }}>
             <AlertCircle size={48} color="#ef4444" style={{ marginBottom: '16px' }} />
             <p style={{ fontSize: '16px', color: C.text, marginBottom: '16px' }}>{erro}</p>
@@ -175,18 +207,14 @@ export function ProvaOnline({
               Voltar ao curso
             </button>
           </div>
-        </main>
-      </div>
+      </Moldura>
     )
   }
 
   // ── RESULTADO ──
   if (resultado) {
     return (
-      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Topbar titulo="Meus Cursos" subtitulo="Avaliações e provas" onNavigate={onNavigate} />
+      <Moldura titulo="Meus Cursos" subtitulo="Avaliações e provas">
           <div style={{ flex: 1, overflowY: 'auto', padding: '32px', display: 'flex', justifyContent: 'center' }}>
             <div style={{ width: '100%', maxWidth: '720px' }}>
               <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', overflow: 'hidden', marginBottom: '24px' }}>
@@ -278,7 +306,6 @@ export function ProvaOnline({
               </div>
             </div>
           </div>
-        </main>
 
         {mostrarAvaliacao && (
           <ModalAvaliacao
@@ -287,17 +314,14 @@ export function ProvaOnline({
             onFechar={() => setMostrarAvaliacao(false)}
           />
         )}
-      </div>
+      </Moldura>
     )
   }
 
   // ── TELA INICIAL ──
   if (!iniciada) {
     return (
-      <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Topbar titulo="Prova Online" subtitulo="Configurações da avaliação" onNavigate={onNavigate} />
+      <Moldura titulo="Prova Online" subtitulo="Configurações da avaliação">
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', maxWidth: '560px', width: '100%', overflow: 'hidden' }}>
               <div style={{ height: '4px', background: C.blue }} />
@@ -358,17 +382,13 @@ export function ProvaOnline({
               </div>
             </div>
           </div>
-        </main>
-      </div>
+      </Moldura>
     )
   }
 
   // ── PROVA EM ANDAMENTO ──
   return (
-    <div style={{ fontFamily: "'Inter',sans-serif", background: C.bg, color: C.text, display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar paginaAtiva="meusCursos" onNavigate={onNavigate} onLogout={onLogout} />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Topbar titulo="Prova em Andamento" subtitulo="Responda com atenção" onNavigate={onNavigate} />
+    <Moldura titulo="Prova em Andamento" subtitulo="Responda com atenção">
 
         {/* Barra de progresso e timer */}
         <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '12px 24px', flexShrink: 0 }}>
@@ -496,7 +516,6 @@ export function ProvaOnline({
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </Moldura>
   )
 }

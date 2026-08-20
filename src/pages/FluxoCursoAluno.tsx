@@ -5,9 +5,8 @@ import { ProvaOnline } from './ProvaOnline'
 
 interface FluxoCursoAlunoProps {
   cursoSlug: string
-  /** Dentro do painel: detalhe e vídeo saem sem sidebar própria. A PROVA
-   *  continua em tela cheia de propósito — menos poluição e menos rota de
-   *  fuga acidental durante a avaliação. */
+  /** Dentro do painel: as três telas (detalhe, vídeo e prova) saem sem a
+   *  sidebar do aluno — quem provê o layout é o painel. */
   embutido?: boolean
   /** Informa a etapa ao painel, para ele ajustar o título da topbar. */
   onEtapaChange?: (etapa: 'detalhe' | 'video' | 'prova') => void
@@ -40,11 +39,9 @@ export function FluxoCursoAluno({ cursoSlug, onSair, onLogout, embutido = false,
   useEffect(() => { onEtapaChange?.(etapa) }, [etapa, onEtapaChange])
 
   if (etapa === 'prova') {
-    // A prova monta o proprio layout de 100vh. Dentro do painel ela ficaria
-    // espremida na area de conteudo, entao sobe como overlay fixo por cima —
-    // e assim a avaliacao ocupa a tela inteira, que e o comportamento pedido.
-    const prova = (
+    return (
       <ProvaOnline
+        embutido={embutido}
         cursoSlug={provaSlug}
         cursoTitulo={provaTitulo}
         onNavigate={onSair}
@@ -56,9 +53,6 @@ export function FluxoCursoAluno({ cursoSlug, onSair, onLogout, embutido = false,
         }}
       />
     )
-    return embutido
-      ? <div style={{ position: 'fixed', inset: 0, zIndex: 1500 }}>{prova}</div>
-      : prova
   }
 
   if (etapa === 'video') {

@@ -68,14 +68,16 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
 
   // Em "Minhas Aulas" o titulo acompanha a etapa do curso aberto.
   const tituloAtual = pagina === 'minhasAulas' && cursoAluno
-    ? (etapaCurso === 'video' ? 'Vídeo Aula' : 'Detalhes do Curso')
+    ? (etapaCurso === 'prova' ? 'Prova Online'
+      : etapaCurso === 'video' ? 'Vídeo Aula'
+      : 'Detalhes do Curso')
     : TITULOS[pagina]
 
   function renderConteudo() {
     switch (pagina) {
       case 'minhasAulas':
-        // Curso aberto: o fluxo entra na area de conteudo, com a sidebar do
-        // painel por fora. A prova sobe como overlay (ver FluxoCursoAluno).
+        // Curso aberto: detalhe, video e prova entram na area de conteudo,
+        // com a sidebar do painel por fora.
         return cursoAluno ? (
           <FluxoCursoAluno
             embutido
