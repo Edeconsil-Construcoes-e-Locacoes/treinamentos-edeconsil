@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useTheme } from '../../contexts/ThemeContext'
-import { Search, ChevronUp, ChevronDown, ChevronsUpDown, Users, UserCheck, UserX, X, UserPlus } from 'lucide-react'
+import { Search, ChevronUp, ChevronDown, ChevronsUpDown, Users, UserCheck, UserX, X, UserPlus, Download } from 'lucide-react'
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 import { CadastroAluno } from '../admin/CadastroAluno'
@@ -49,6 +49,30 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
   const [carregando, setCarregando]                   = useState(false)
   const [modalCadastro, setModalCadastro]             = useState(false)
   const [modalImportar, setModalImportar]             = useState(false)
+  const [menuExportar, setMenuExportar] = useState(false)
+  const [exportando, setExportando]     = useState(false)
+
+  const itemMenuStyle = {
+    display: 'block', width: '100%', textAlign: 'left' as const,
+    padding: '9px 10px', background: 'none', border: 'none', borderRadius: '6px',
+    fontSize: '13px', color: C.text, cursor: 'pointer', fontFamily: "'Inter',sans-serif",
+  }
+
+  const exportar = async (lista: any[]) => {
+    if (exportando) return
+    setExportando(true)
+    setMenuExportar(false)
+    try {
+      const { exportarAlunosExcel, nomeArquivoAlunos } = await import('../../utils/exportarAlunosExcel')
+      await exportarAlunosExcel(lista, nomeArquivoAlunos())
+    } catch (err) {
+      console.error('Erro ao exportar alunos:', err)
+      alert('Não foi possível gerar a planilha.')
+    } finally {
+      setExportando(false)
+    }
+  }
+
   const [alunoExcluindo, setAlunoExcluindo]           = useState<Aluno | null>(null)
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [excluindoId, setExcluindoId]                 = useState<string | null>(null)
@@ -308,6 +332,56 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
           <span style={{ marginLeft: 'auto', fontSize: '12px', color: C.muted }}>
             {carregando ? 'Carregando...' : `${alunosFiltrados.length} resultado${alunosFiltrados.length !== 1 ? 's' : ''}`}
           </span>
+
+          {/* Exportar — todos ou o resultado filtrado */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMenuExportar(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 16px', background: 'none',
+                border: `1.5px solid ${C.blue}`, borderRadius: '8px',
+                fontSize: '13px', fontWeight: 600, color: C.blue, cursor: 'pointer', transition: 'all 150ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `rgba(26,86,255,0.08)` }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+            >
+              <Download size={15} />
+              Exportar
+            </button>
+
+            {menuExportar && (
+              <>
+                <div onClick={() => setMenuExportar(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50,
+                  minWidth: '230px', background: C.surface, border: `1px solid ${C.border}`,
+                  borderRadius: '10px', boxShadow: '0 12px 32px rgba(0,0,0,0.25)', padding: '6px',
+                }}>
+                  {/* Sem filtro ativo as duas listas sao iguais — uma opcao basta. */}
+                  {alunosFiltrados.length === alunos.length ? (
+                    <button onClick={() => exportar(alunos)} style={itemMenuStyle}>
+                      Exportar ({alunos.length})
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => exportar(alunosFiltrados)} style={itemMenuStyle}>
+                        Exportar filtrados ({alunosFiltrados.length})
+                      </button>
+                      <button onClick={() => exportar(alunos)} style={itemMenuStyle}>
+                        Exportar todos ({alunos.length})
+                      </button>
+                    </>
+                  )}
+                  {alunos.length >= 500 && (
+                    <p style={{ fontSize: '10px', color: '#f59e0b', margin: '6px 8px 2px', lineHeight: 1.4 }}>
+                      A listagem traz no máximo 500 — pode haver alunos fora desta exportação.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             onClick={() => setModalImportar(true)}
