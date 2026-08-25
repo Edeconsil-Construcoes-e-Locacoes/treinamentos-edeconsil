@@ -1,10 +1,12 @@
+import * as XLSX from 'xlsx'
+
 /**
  * Exporta uma lista de alunos para .xlsx.
  *
- * A lib xlsx entra por import DINÂMICO de propósito: hoje o projeto só a usa
- * para LER a planilha de importação, e o tree-shaking descarta a metade
- * escritora (~90 KB). Uma chamada estática de writeFile traria esse peso de
- * volta para todo mundo — assim só baixa quem clica em Exportar.
+ * Import estático, igual ao importarExcel.ts. A versão anterior usava
+ * `await import('xlsx')` e quebrava em produção com `XLSX.utils` undefined.
+ * O dinâmico também não economizava peso: o importarExcel importa a lib
+ * estaticamente, então ela já está no bundle principal de qualquer forma.
  */
 
 /** A listagem preenche cargo/setor/matrícula com '—'; na planilha isso vira vazio. */
@@ -23,8 +25,6 @@ const dataBR = (v: any) => {
 }
 
 export async function exportarAlunosExcel(alunos: any[], nomeArquivo: string) {
-  const XLSX = await import('xlsx')
-
   const linhas = alunos.map(a => ({
     Nome:       a.nome ?? '',
     // String, não number: assim a célula sai como texto (t:'s') e o zero à
