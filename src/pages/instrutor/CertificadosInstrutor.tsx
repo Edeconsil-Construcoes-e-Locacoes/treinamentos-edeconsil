@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Search, FileDown, Upload, LayoutGrid, List } from 'lucide-react'
+import { Search, FileDown, Upload, LayoutGrid, List, Download } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { certificadosAPI, usuariosAPI, instrutorAPI } from '../../services/api'
+import { imprimirCertificado } from '../../utils/imprimirCertificado'
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 
@@ -100,6 +101,14 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
   const formatarData = (iso: string) => {
     if (!iso) return '—'
     return new Date(iso).toLocaleDateString('pt-BR')
+  }
+
+  const baixarCertificado = (cert: any) => {
+    if (cert.tipo === 'externo' && cert.url_pdf) {
+      window.open(`${BACKEND_URL}${cert.url_pdf}`, '_blank')
+    } else {
+      imprimirCertificado(cert)
+    }
   }
 
   return (
@@ -271,6 +280,16 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
                       )}
                     </>
                   )}
+
+                  {cert.tipo !== 'externo' && (
+                    <button
+                      onClick={() => baixarCertificado(cert)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', marginTop: '12px', padding: '8px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 600, color: C.text, cursor: 'pointer' }}
+                    >
+                      <Download size={13} /> Baixar
+                    </button>
+                  )}
+
                   <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: `1px solid ${C.border}` }}>
                     <span style={{ fontSize: '10px', color: C.muted, fontFamily: 'monospace' }}>
                       {cert.codigo}
@@ -288,7 +307,7 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: C.surface2 }}>
-                {['Aluno', 'Curso', 'Código', 'Nota', 'Emitido em', 'Válido até', 'Setor'].map(h => (
+                {['Aluno', 'Curso', 'Código', 'Nota', 'Emitido em', 'Válido até', 'Setor', 'Ações'].map(h => (
                   <th key={h} style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 700, color: C.muted, textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: `1px solid ${C.border}` }}>
                     {h}
                   </th>
@@ -298,13 +317,13 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
             <tbody>
               {carregando ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: C.muted, fontSize: '13px' }}>
+                  <td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: C.muted, fontSize: '13px' }}>
                     Carregando...
                   </td>
                 </tr>
               ) : certificados.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '48px', textAlign: 'center' }}>
+                  <td colSpan={8} style={{ padding: '48px', textAlign: 'center' }}>
                     <div style={{ fontSize: '32px', marginBottom: '10px' }}>🏆</div>
                     <p style={{ fontSize: '14px', color: C.text, margin: '0 0 4px', fontWeight: 600 }}>
                       Nenhum certificado emitido ainda
@@ -346,6 +365,14 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '12px', color: C.muted }}>
                     {cert.aluno_setor ?? '—'}
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <button
+                      onClick={() => baixarCertificado(cert)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '6px', fontSize: '11px', fontWeight: 600, color: C.text, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      <Download size={12} /> Baixar
+                    </button>
                   </td>
                 </tr>
               ))}
