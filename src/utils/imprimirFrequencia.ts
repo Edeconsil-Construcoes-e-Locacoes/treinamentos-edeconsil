@@ -11,6 +11,7 @@ export interface DadosFrequencia {
     cpf: string
     cargo: string | null
     data_emissao: string
+    hora_emissao?: string
   }[]
 }
 
@@ -25,6 +26,19 @@ const formatarData = (d: string) =>
 const formatarCpf = (cpf: string) => {
   const digitos = String(cpf ?? '').replace(/\D/g, '').padStart(11, '0')
   return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9, 11)}`
+}
+
+// Strings "HH:MM" ordenam corretamente por comparação lexicográfica — não
+// precisa (e não deve) virar Date, já causou bug de fuso neste projeto.
+const calcularFaixaHorario = (alunos: DadosFrequencia['alunos']) => {
+  const horarios = alunos
+    .map(a => a.hora_emissao)
+    .filter((h): h is string => Boolean(h))
+    .sort()
+  if (horarios.length === 0) return ''
+  const menor = horarios[0]
+  const maior = horarios[horarios.length - 1]
+  return menor === maior ? menor : `${menor} às ${maior}`
 }
 
 export const imprimirFrequencia = (dados: DadosFrequencia) => {
@@ -65,7 +79,7 @@ export const imprimirFrequencia = (dados: DadosFrequencia) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     @page { size: A4 portrait; margin: 10mm; }
     body {
-      font-family:'Montserrat',Arial,sans-serif; font-size:9pt; color:#000;
+      font-family:'Montserrat',Arial,sans-serif; font-size:7.5pt; color:#000;
       print-color-adjust:exact; -webkit-print-color-adjust:exact;
     }
     table {
@@ -84,6 +98,9 @@ export const imprimirFrequencia = (dados: DadosFrequencia) => {
     .logo-cel { text-align:center; }
     .logo-cel img { height:50px; }
     thead { display:table-header-group; }
+    .tabela-presenca td, .tabela-presenca th {
+      font-size:7pt; padding:2px 4px; line-height:1.2;
+    }
     tbody tr { page-break-inside:avoid; }
     .conteudo-cel { min-height:15mm; }
     .rodape {
@@ -126,13 +143,13 @@ export const imprimirFrequencia = (dados: DadosFrequencia) => {
       <td class="lbl">INSTRUTOR:</td>
       <td style="width:32%;">${esc(curso.instrutor)}</td>
       <td class="lbl" style="width:18%;">HORÁRIO:</td>
-      <td style="width:32%;"></td>
+      <td style="width:32%;">${esc(calcularFaixaHorario(alunos))}</td>
     </tr>
     <tr>
       <td class="lbl">ÁREA / OBRA:</td>
       <td></td>
       <td class="lbl">LOCAL:</td>
-      <td></td>
+      <td>Portal de Treinamentos - EaD</td>
     </tr>
     <tr>
       <td colspan="2">NECESSÁRIO AVALIAR A EFICÁCIA? &#9744; SIM &#9744; NÃO</td>
@@ -141,7 +158,8 @@ export const imprimirFrequencia = (dados: DadosFrequencia) => {
     </tr>
     <tr>
       <td colspan="2">FORMA DE VERIFICAÇÃO DE EFICÁCIA: &#9744; Teste escrito &#9744; Teste prático &#9744; Teste oral &#9744; Observação no trabalho — Data limite: __/__/____</td>
-      <td class="lbl" colspan="2">RESPONSÁVEL PELA AVALIAÇÃO DA EFICÁCIA:</td>
+      <td class="lbl">RESPONSÁVEL PELA AVALIAÇÃO DA EFICÁCIA:</td>
+      <td>${esc(curso.instrutor)}</td>
     </tr>
   </table>
 
@@ -152,7 +170,7 @@ export const imprimirFrequencia = (dados: DadosFrequencia) => {
     </tr>
   </table>
 
-  <table>
+  <table class="tabela-presenca">
     <thead>
       <tr>
         <th style="width:4%;">Nº</th>
