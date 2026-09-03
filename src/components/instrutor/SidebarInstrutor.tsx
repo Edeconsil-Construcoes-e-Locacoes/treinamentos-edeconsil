@@ -2,7 +2,7 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { Logo } from '../Logo'
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
-  MessageSquare, FileText, LogOut, Award, BarChart2, Bell
+  MessageSquare, FileText, LogOut, Award, BarChart2, Bell, ClipboardList
 } from 'lucide-react'
 
 const navInstrutor = [
@@ -12,6 +12,7 @@ const navInstrutor = [
   { label: 'Alunos',        page: 'alunosInstrutor',       icon: GraduationCap   },
   { label: 'Cursos',        page: 'cursosInstrutor',       icon: BookOpen        },
   { label: 'Certificados',  page: 'certificadosInstrutor', icon: Award           },
+  { label: 'Frequência',    page: 'controleFrequencia',    icon: ClipboardList   },
   { label: 'Indicadores',   page: 'indicadoresInstrutor',  icon: BarChart2       },
   { label: 'Notificações',  page: 'notificacoesInstrutor', icon: Bell            },
   { label: 'Mensagens',     page: 'mensagensInstrutor',    icon: MessageSquare   },

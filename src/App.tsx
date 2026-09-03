@@ -15,6 +15,7 @@ import { AlunosAdmin } from './pages/admin/AlunosAdmin'
 import { InstrutoresAdmin } from './pages/admin/InstrutoresAdmin'
 import { CertificadosAdmin } from './pages/admin/CertificadosAdmin'
 import { AvaliacoesAdmin } from './pages/admin/AvaliacoesAdmin'
+import { ControleFrequencia } from './pages/admin/ControleFrequencia'
 import { MeusCursosConteudo } from './pages/MeusCursosConteudo'
 import { FluxoCursoAluno } from './pages/FluxoCursoAluno'
 import { BibliotecaAdmin } from './pages/admin/BibliotecaAdmin'
@@ -96,7 +97,7 @@ class ErrorBoundary extends React.Component<
 }
 
 type Perfil = 'colaborador' | 'admin' | 'instrutor'
-type Pagina = 'dashboard' | 'meusCursos' | 'meusCursosLista' | 'cursoDetalhe' | 'videoAula' | 'trilha' | 'mensagens' | 'anotacoes' | 'prova' | 'edeconQuiz' | 'admin' | 'cursosAdmin' | 'cursoDetalheAdmin' | 'indicadoresAdmin' | 'turmasAdmin' | 'matrizCursosAdmin' | 'alunosAdmin' | 'instrutoresAdmin' | 'certificadosAdmin' | 'avaliacoesAdmin' | 'minhasAulas' | 'bibliotecaAdmin' | 'configuracoesAdmin' | 'permissoesAdmin' | 'certificadosColaborador' | 'apostilas' | 'mensagensAdmin' | 'notificacoesAdmin'
+type Pagina = 'dashboard' | 'meusCursos' | 'meusCursosLista' | 'cursoDetalhe' | 'videoAula' | 'trilha' | 'mensagens' | 'anotacoes' | 'prova' | 'edeconQuiz' | 'admin' | 'cursosAdmin' | 'cursoDetalheAdmin' | 'indicadoresAdmin' | 'turmasAdmin' | 'matrizCursosAdmin' | 'alunosAdmin' | 'instrutoresAdmin' | 'certificadosAdmin' | 'avaliacoesAdmin' | 'minhasAulas' | 'bibliotecaAdmin' | 'configuracoesAdmin' | 'permissoesAdmin' | 'certificadosColaborador' | 'apostilas' | 'mensagensAdmin' | 'notificacoesAdmin' | 'controleFrequencia'
 
 function AppContent() {
   // Limpar sessões antigas (sem campo 'id' no usuário)
@@ -228,6 +229,12 @@ function AppContent() {
     )
     if (pagina === 'avaliacoesAdmin') return (
       <AvaliacoesAdmin
+        onNavigate={(p) => setPagina(p as Pagina)}
+        onLogout={handleLogout}
+      />
+    )
+    if (pagina === 'controleFrequencia') return (
+      <ControleFrequencia
         onNavigate={(p) => setPagina(p as Pagina)}
         onLogout={handleLogout}
       />

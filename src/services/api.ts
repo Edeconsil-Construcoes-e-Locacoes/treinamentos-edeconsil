@@ -404,6 +404,14 @@ export const modulosAPI = {
     apiRequest(`/modulos/${id}`, { method: 'DELETE' }),
 }
 
+export const frequenciaAPI = {
+  listarCursos: () =>
+    apiRequest<{ id: string; titulo: string; slug: string }[]>('/admin/frequencia/cursos'),
+
+  obter: (cursoId: string) =>
+    apiRequest<any>(`/admin/frequencia/${cursoId}`),
+}
+
 if (typeof window !== 'undefined') {
   setInterval(() => { apiRequest('/ping').catch(() => {}) }, 4 * 60 * 1000)
 }

@@ -17,6 +17,7 @@ import { IndicadoresInstrutor } from '../pages/instrutor/IndicadoresInstrutor'
 import { NotificacoesInstrutor } from '../pages/instrutor/NotificacoesInstrutor'
 import { MeusCursosConteudo } from '../pages/MeusCursosConteudo'
 import { FluxoCursoAluno } from '../pages/FluxoCursoAluno'
+import { ControleFrequencia } from '../pages/admin/ControleFrequencia'
 
 type PaginaInstrutor =
   | 'dashboardInstrutor'
@@ -30,6 +31,7 @@ type PaginaInstrutor =
   | 'certificadosInstrutor'
   | 'indicadoresInstrutor'
   | 'notificacoesInstrutor'
+  | 'controleFrequencia'
 
 interface PainelInstrutorProps {
   onLogout: () => void
@@ -47,6 +49,7 @@ const TITULOS: Record<PaginaInstrutor, string> = {
   certificadosInstrutor:   'Certificados',
   indicadoresInstrutor:    'Indicadores',
   notificacoesInstrutor:   'Notificações',
+  controleFrequencia:      'Controle de Frequência',
 }
 
 export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
@@ -123,6 +126,8 @@ export function PainelInstrutor({ onLogout }: PainelInstrutorProps) {
         return <IndicadoresInstrutor onNavigate={navegar} />
       case 'notificacoesInstrutor':
         return <NotificacoesInstrutor onNavigate={navegar} />
+      case 'controleFrequencia':
+        return <ControleFrequencia embutido />
       default:
         return <DashboardInstrutor onNavigate={navegar} />
     }
