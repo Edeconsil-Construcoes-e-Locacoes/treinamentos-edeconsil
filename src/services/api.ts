@@ -345,6 +345,38 @@ export const cargosAPI = {
 
 export const indicadoresAPI = {
   buscar: () => apiRequest('/admin/indicadores'),
+  buscarCursos: () =>
+    apiRequest<{
+      escopo: 'admin' | 'turma' | 'sem_turma'
+      disponiveis: Array<{
+        id: string
+        titulo: string
+        publico_total: number
+        total_iniciaram: number
+        total_concluintes: number
+        progresso_medio: number
+      }>
+      certificados: Array<{
+        id: string
+        aluno_nome: string
+        curso_titulo: string
+        data_emissao: string
+        tipo: string
+      }>
+    }>('/admin/indicadores/cursos'),
+  buscarAlunos: () =>
+    apiRequest<{
+      escopo: 'admin' | 'turma' | 'sem_turma'
+      alunos: Array<{
+        id: string
+        nome: string
+        cargo: string | null
+        turma_nome: string | null
+        cursos_atribuidos: number
+        cursos_concluidos: number
+        progresso_geral: number
+      }>
+    }>('/admin/indicadores/alunos'),
 }
 
 export const notificacoesAPI = {

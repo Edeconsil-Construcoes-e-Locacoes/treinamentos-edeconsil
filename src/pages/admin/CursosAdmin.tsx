@@ -10,6 +10,7 @@ import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { cursosAPI } from '../../services/api'
 import { CriarCurso } from './CriarCurso'
 import { useBreakpoint } from '../../hooks/useMobile'
+import { BarraProgresso } from '../../components/BarraProgresso'
 
 const statusOpcoes = ['Todos', 'Ativo', 'Rascunho', 'Arquivado']
 
@@ -350,20 +351,30 @@ export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso }: {
                       ))}
                     </div>
 
-                    {/* Barra de conclusão + Instrutor */}
+                    {/* Progresso da turma */}
                     {curso.status === 'ativo' && (() => {
-                      const alm  = parseInt(curso.total_alunos_matriculados) || 0
-                      const conc = parseInt(curso.total_concluidos) || 0
-                      const taxa = alm > 0 ? Math.round((conc / alm) * 100) : 0
+                      const publicoTotal   = Number(curso.publico_total) || 0
+                      const iniciaram      = Number(curso.total_iniciaram) || 0
+                      const concluintes    = Number(curso.total_concluintes) || 0
+                      const progressoMedio = Number(curso.progresso_medio) || 0
                       return (
                         <div style={{ marginTop: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                            <span style={{ fontSize: '10px', color: C.muted }}>Taxa de conclusão</span>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: taxa >= 70 ? '#10b981' : C.blue }}>{taxa}%</span>
-                          </div>
-                          <div style={{ background: 'rgba(26,86,255,0.10)', borderRadius: '4px', height: '3px' }}>
-                            <div style={{ background: taxa >= 70 ? '#10b981' : C.blue, height: '3px', borderRadius: '4px', width: `${taxa}%` }} />
-                          </div>
+                          <div style={{ fontSize: '10px', color: C.muted, marginBottom: '3px' }}>Progresso da turma</div>
+                          {publicoTotal === 0 ? (
+                            <div style={{ fontSize: '10px', color: C.muted }}>—</div>
+                          ) : iniciaram === 0 ? (
+                            <>
+                              <BarraProgresso valor={0} />
+                              <p style={{ fontSize: '10px', color: C.muted, margin: '4px 0 0' }}>Ninguém iniciou ainda</p>
+                            </>
+                          ) : (
+                            <>
+                              <BarraProgresso valor={progressoMedio} mostrarRotulo />
+                              <p style={{ fontSize: '10px', color: C.muted, margin: '4px 0 0' }}>
+                                {iniciaram} de {publicoTotal} iniciaram · {concluintes} concluíram
+                              </p>
+                            </>
+                          )}
                         </div>
                       )
                     })()}

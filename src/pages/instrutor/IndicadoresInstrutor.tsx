@@ -9,21 +9,51 @@ import {
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { indicadoresAPI } from '../../services/api'
+import { BarraProgresso } from '../../components/BarraProgresso'
 
 export function IndicadoresInstrutor({ onNavigate }: {
   onNavigate: (page: string) => void
 }) {
   const { C } = useTheme()
-  const [abaCursos, setAbaCursos] = useState<'historico' | 'disponiveis' | 'certificados'>('historico')
+  const [abaCursos, setAbaCursos] = useState<'historico' | 'disponiveis' | 'certificados' | 'individual'>('historico')
   const [periodoHoras, setPeriodoHoras] = useState<'geral' | 'centro'>('geral')
   const [dados, setDados] = useState<any>(null)
   const [carregando, setCarregando] = useState(true)
+  const [escopoCursos, setEscopoCursos] = useState<'admin' | 'turma' | 'sem_turma'>('admin')
+  const [cursosDisponiveis, setCursosDisponiveis] = useState<any[]>([])
+  const [certificadosLista, setCertificadosLista] = useState<any[]>([])
+  const [alunosIndividual, setAlunosIndividual] = useState<any[]>([])
+  const [erroCursos, setErroCursos] = useState('')
+  const [erroAlunos, setErroAlunos] = useState('')
+  const [buscaAluno, setBuscaAluno] = useState('')
+  const [somenteIniciaram, setSomenteIniciaram] = useState(false)
 
   useEffect(() => {
     indicadoresAPI.buscar()
       .then((data: any) => { setDados(data); setCarregando(false) })
       .catch(() => setCarregando(false))
+
+    indicadoresAPI.buscarCursos()
+      .then((data: any) => {
+        setEscopoCursos(data.escopo)
+        setCursosDisponiveis(data.disponiveis ?? [])
+        setCertificadosLista(data.certificados ?? [])
+      })
+      .catch((err: any) => setErroCursos(err?.message ?? 'Erro ao carregar treinamentos e certificados.'))
+
+    indicadoresAPI.buscarAlunos()
+      .then((data: any) => {
+        setEscopoCursos(data.escopo)
+        setAlunosIndividual(data.alunos ?? [])
+      })
+      .catch((err: any) => setErroAlunos(err?.message ?? 'Erro ao carregar indicador individual.'))
   }, [])
+
+  const alunosFiltrados = alunosIndividual
+    .filter((a: any) => (a.nome ?? '').toLowerCase().includes(buscaAluno.toLowerCase()))
+    .filter((a: any) => !somenteIniciaram || Number(a.cursos_concluidos) > 0)
+
+  const semTurmaMsg = 'Nenhum colaborador cadastrado na sua turma. Fale com o RH para vincular colaboradores.'
 
   const _ = carregando ? '...' : undefined
 
@@ -282,18 +312,17 @@ export function IndicadoresInstrutor({ onNavigate }: {
 
         {/* Histórico / Tabs */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, marginBottom: '12px' }}>
+          <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, marginBottom: '12px', flexWrap: 'wrap' }}>
             {[
               { key: 'historico',    label: 'Admissões Recentes'       },
               { key: 'disponiveis',  label: 'Treinamentos Disponíveis' },
               { key: 'certificados', label: 'Certificados'             },
+              { key: 'individual',   label: 'Indicador individual'     },
             ].map(aba => (
               <button
                 key={aba.key}
-                disabled={aba.key !== 'historico'}
-                  title={aba.key === 'historico' ? undefined : 'Ainda não disponível'}
-                  onClick={() => aba.key === 'historico' && setAbaCursos(aba.key as typeof abaCursos)}
-                style={{ background: 'none', border: 'none', cursor: aba.key === 'historico' ? 'pointer' : 'not-allowed', opacity: aba.key === 'historico' ? 1 : 0.45, padding: '8px 16px', fontSize: '13px', fontWeight: abaCursos === aba.key ? 600 : 400, color: abaCursos === aba.key ? C.blue : C.muted, borderBottom: abaCursos === aba.key ? `2px solid ${C.blue}` : '2px solid transparent', marginBottom: '-1px', transition: 'all 150ms' }}
+                onClick={() => setAbaCursos(aba.key as typeof abaCursos)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 16px', fontSize: '13px', fontWeight: abaCursos === aba.key ? 600 : 400, color: abaCursos === aba.key ? C.blue : C.muted, borderBottom: abaCursos === aba.key ? `2px solid ${C.blue}` : '2px solid transparent', marginBottom: '-1px', transition: 'all 150ms' }}
               >
                 {aba.label}
               </button>
@@ -326,6 +355,130 @@ export function IndicadoresInstrutor({ onNavigate }: {
                 Ver todos os colaboradores
               </button>
             </>
+          )}
+
+          {abaCursos === 'disponiveis' && (
+            escopoCursos === 'sem_turma' ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                {semTurmaMsg}
+              </div>
+            ) : erroCursos ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#ef4444', fontSize: '12px' }}>
+                {erroCursos}
+              </div>
+            ) : cursosDisponiveis.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                Nenhum curso disponível.
+              </div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {cursosDisponiveis.map((curso: any) => {
+                  const publicoTotal   = Number(curso.publico_total) || 0
+                  const iniciaram      = Number(curso.total_iniciaram) || 0
+                  const concluintes    = Number(curso.total_concluintes) || 0
+                  const progressoMedio = Number(curso.progresso_medio) || 0
+                  return (
+                    <div key={curso.id} style={{ padding: '10px 12px', background: C.surface2, borderRadius: '8px', border: `0.5px solid ${C.border}` }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: C.text, marginBottom: '6px' }}>{curso.titulo}</div>
+                      {publicoTotal === 0 ? (
+                        <div style={{ fontSize: '10px', color: C.muted }}>—</div>
+                      ) : iniciaram === 0 ? (
+                        <>
+                          <BarraProgresso valor={0} />
+                          <p style={{ fontSize: '10px', color: C.muted, margin: '4px 0 0' }}>Ninguém iniciou ainda</p>
+                        </>
+                      ) : (
+                        <>
+                          <BarraProgresso valor={progressoMedio} mostrarRotulo />
+                          <p style={{ fontSize: '10px', color: C.muted, margin: '4px 0 0' }}>
+                            {iniciaram} de {publicoTotal} iniciaram · {concluintes} concluíram
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          )}
+
+          {abaCursos === 'certificados' && (
+            escopoCursos === 'sem_turma' ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                {semTurmaMsg}
+              </div>
+            ) : erroCursos ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#ef4444', fontSize: '12px' }}>
+                {erroCursos}
+              </div>
+            ) : certificadosLista.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                Nenhum certificado emitido ainda
+              </div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {certificadosLista.map((cert: any) => (
+                  <div key={cert.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 10px', background: C.surface2, borderRadius: '8px', border: `0.5px solid ${C.border}` }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: C.text }}>{cert.aluno_nome}</div>
+                      <div style={{ fontSize: '10px', color: C.muted }}>{cert.curso_titulo}</div>
+                    </div>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#fff', background: '#1a56ff', borderRadius: '6px', padding: '3px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {String(cert.data_emissao).slice(0, 10).split('-').reverse().join('/')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {abaCursos === 'individual' && (
+            escopoCursos === 'sem_turma' ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                {semTurmaMsg}
+              </div>
+            ) : erroAlunos ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#ef4444', fontSize: '12px' }}>
+                {erroAlunos}
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                  <input
+                    value={buscaAluno}
+                    onChange={e => setBuscaAluno(e.target.value)}
+                    placeholder="Buscar por nome..."
+                    style={{ flex: 1, minWidth: '140px', padding: '7px 10px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '12px', color: C.text }}
+                  />
+                  <button
+                    onClick={() => setSomenteIniciaram(v => !v)}
+                    style={{ padding: '7px 12px', background: somenteIniciaram ? C.blue : 'none', color: somenteIniciaram ? '#fff' : C.muted, border: `1px solid ${somenteIniciaram ? C.blue : C.border}`, borderRadius: '8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    {somenteIniciaram ? 'Só quem iniciou' : 'Todos'}
+                  </button>
+                </div>
+                <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {alunosFiltrados.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                      Nenhum colaborador encontrado.
+                    </div>
+                  ) : alunosFiltrados.map((a: any) => (
+                    <div key={a.id} style={{ padding: '8px 10px', background: C.surface2, borderRadius: '8px', border: `0.5px solid ${C.border}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: C.text }}>{a.nome}</div>
+                          <div style={{ fontSize: '10px', color: C.muted }}>{a.cargo ?? '—'} · {a.turma_nome ?? '—'}</div>
+                        </div>
+                        <span style={{ fontSize: '10px', color: C.muted, whiteSpace: 'nowrap' }}>
+                          {a.cursos_concluidos} de {a.cursos_atribuidos} cursos
+                        </span>
+                      </div>
+                      <BarraProgresso valor={Number(a.progresso_geral) || 0} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )
           )}
         </div>
 
