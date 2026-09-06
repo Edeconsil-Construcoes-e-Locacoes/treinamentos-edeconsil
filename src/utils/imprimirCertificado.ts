@@ -12,7 +12,6 @@ export const imprimirCertificado = (cert: any) => {
   // absoluto, senão o fundo não carrega.
   const fundo = `${window.location.origin}/certificados/modelo-certificado.png`
   const instrutorNome  = cert.instrutor ?? ''
-  const instrutorEspec = cert.instrutor_especialidade ?? ''
   const esc = (s: string) => String(s).replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
 
@@ -29,10 +28,15 @@ export const imprimirCertificado = (cert: any) => {
     /* A folha tem a proporção EXATA da imagem (5417x3750 = 1.4445), senão o
        fundo distorce. 297mm / 1.4445 = 205.6mm — cabe em A4 paisagem. */
     @page { size: A4 landscape; margin: 0; }
+    /* Tamanho fixo em mm (não vh) + overflow:hidden — 100vh é instável em
+       impressão no Firefox e foi o que empurrava o conteúdo para uma 2ª página. */
+    html, body {
+      width:297mm; height:210mm; margin:0; padding:0; overflow:hidden;
+    }
     body {
       font-family:'Montserrat',Arial,sans-serif; background:#e9edf2;
-      display:flex; justify-content:center; align-items:center;
-      min-height:100vh; padding:16px;
+      width:100%; height:100%; position:relative;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
       print-color-adjust:exact; -webkit-print-color-adjust:exact;
     }
     .certificado {
@@ -67,7 +71,7 @@ export const imprimirCertificado = (cert: any) => {
       font-size:12pt; color:#1f2937; white-space:nowrap;
     }
     @media print {
-      body { background:#fff; padding:0; }
+      body { background:#fff; }
       .certificado { box-shadow:none; }
     }
   </style>
@@ -87,8 +91,7 @@ export const imprimirCertificado = (cert: any) => {
       <p class="local-data">São Luís, ${dataEmissao}.</p>
     </div>
     <div class="codigo">Código de verificação: ${esc(cert.codigo)}</div>
-    ${instrutorNome  ? `<div class="assinatura-nome">${esc(instrutorNome)}</div>`   : ''}
-    ${instrutorEspec ? `<div class="assinatura-cargo">${esc(instrutorEspec)}</div>` : ''}
+    ${instrutorNome ? `<div class="assinatura-nome">${esc(instrutorNome)}</div><div class="assinatura-cargo">Instrutor</div>` : ''}
   </div>
   <script>
     // Sem esperar as fontes, o print sai em Arial e a caligrafia se perde.
