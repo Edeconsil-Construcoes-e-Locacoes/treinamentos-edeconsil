@@ -35,6 +35,8 @@ export function ImportarTurmasModal({ onFechar, onSucesso }: ImportarTurmasModal
   const [resultado, setResultado]         = useState<ResultadoImportacao | null>(null)
   const [expandirErros, setExpandirErros] = useState(false)
   const [dragOver, setDragOver]           = useState(false)
+  const [progresso, setProgresso]         = useState({ feitos: 0, total: 0 })
+  const [interrompido, setInterrompido]   = useState('')
 
   const turmasValidas   = turmas.filter(t => t.valido)
   const turmasInvalidas = turmas.filter(t => !t.valido)
@@ -70,24 +72,69 @@ export function ImportarTurmasModal({ onFechar, onSucesso }: ImportarTurmasModal
     if (file) processarArquivo(file)
   }, [])
 
-  const importar = async () => {
-    setEtapa('importando')
-    try {
-      const payload = turmasValidas.map(t => ({
-        nome:        t.nome,
-        setor:       t.setor,
-        responsavel: t.responsavel,
-      }))
+  // Mesmo fatiamento do importador de alunos, pelo mesmo motivo (timeout de 60s
+  // do Nginx numa requisição única). Bloco maior porque o custo por turma é
+  // menor: 1 SELECT + 1 INSERT, sem bcrypt e sem geração de CR.
+  //
+  // O backend detecta nome repetido dentro da requisição com um Set que vive só
+  // naquela chamada — fatiando, duas linhas iguais em blocos diferentes escapam
+  // do Set. Quem as pega é o SELECT contra o banco, porque o bloco anterior já
+  // inseriu a primeira. Isso só vale porque os blocos vão em SÉRIE: paralelizar
+  // reabriria a janela para duplicata.
+  const TAMANHO_BLOCO = 200
 
-      const res = await turmasAPI.importar(payload) as ResultadoImportacao
-      setResultado(res)
-      setEtapa('resultado')
-      if (res.importados > 0) {
-        onSucesso(res.importados)
+  const importar = async () => {
+    setErro('')
+    setInterrompido('')
+    setEtapa('importando')
+
+    const payload = turmasValidas.map(t => ({
+      nome:        t.nome,
+      setor:       t.setor,
+      responsavel: t.responsavel,
+    }))
+
+    setProgresso({ feitos: 0, total: payload.length })
+
+    const acumulado: ResultadoImportacao = {
+      importados: 0,
+      erros:      0,
+      detalhes:   [],
+      falhas:     [],
+    }
+    let falhou = ''
+
+    for (let i = 0; i < payload.length; i += TAMANHO_BLOCO) {
+      const bloco = payload.slice(i, i + TAMANHO_BLOCO)
+      try {
+        const res = await turmasAPI.importar(bloco) as ResultadoImportacao
+        acumulado.importados += res.importados ?? 0
+        acumulado.erros      += res.erros ?? 0
+        acumulado.detalhes    = acumulado.detalhes.concat(res.detalhes ?? [])
+        acumulado.falhas      = acumulado.falhas.concat(res.falhas ?? [])
+        setProgresso({ feitos: Math.min(i + bloco.length, payload.length), total: payload.length })
+      } catch (e: any) {
+        falhou = e.message ?? 'Erro na importação'
+        break
       }
-    } catch (e: any) {
-      setErro(e.message ?? 'Erro na importação')
-      setEtapa('preview')
+    }
+
+    if (falhou) {
+      setInterrompido(
+        `A importação foi interrompida (${falhou}). As ${acumulado.importados} turma(s) ` +
+        `acima já foram gravadas. Reenviar a mesma planilha é seguro: as já cadastradas ` +
+        `serão apenas rejeitadas por nome duplicado.`
+      )
+    }
+
+    acumulado.mensagem = falhou
+      ? `${acumulado.importados} turma(s) importada(s) antes da interrupção. ${acumulado.erros} rejeitada(s).`
+      : `${acumulado.importados} turma(s) importada(s) com sucesso. ${acumulado.erros} rejeitada(s).`
+
+    setResultado(acumulado)
+    setEtapa('resultado')
+    if (acumulado.importados > 0) {
+      onSucesso(acumulado.importados)
     }
   }
 
@@ -331,11 +378,17 @@ export function ImportarTurmasModal({ onFechar, onSucesso }: ImportarTurmasModal
       <div style={{ padding:'48px 24px', textAlign:'center' }}>
         <div style={{ width:'48px', height:'48px', border:`3px solid ${C.border}`, borderTopColor:C.blue, borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
         <p style={{ fontSize:'15px', fontWeight:600, color:C.text, margin:'0 0 6px' }}>
-          Importando turmas...
+          Importando {progresso.feitos} de {progresso.total}...
         </p>
-        <p style={{ fontSize:'13px', color:C.muted, margin:0 }}>
-          Cadastrando {turmasValidas.length} turma{turmasValidas.length!==1?'s':''}
+        <p style={{ fontSize:'13px', color:C.muted, margin:'0 0 16px' }}>
+          Cadastrando em blocos de {TAMANHO_BLOCO}. Não feche esta janela.
         </p>
+        <div style={{ maxWidth:'320px', margin:'0 auto', height:'6px', background:C.surface2, borderRadius:'3px', overflow:'hidden' }}>
+          <div style={{
+            width: `${progresso.total ? Math.round((progresso.feitos / progresso.total) * 100) : 0}%`,
+            height:'100%', background:C.blue, transition:'width 200ms',
+          }} />
+        </div>
       </div>
     )
   }
@@ -346,15 +399,21 @@ export function ImportarTurmasModal({ onFechar, onSucesso }: ImportarTurmasModal
       <div style={{ padding:'24px' }}>
         <div style={{ textAlign:'center', marginBottom:'24px' }}>
           <div style={{ fontSize:'48px', marginBottom:'12px' }}>
-            {resultado.importados > 0 ? '🎉' : '⚠️'}
+            {interrompido ? '⚠️' : resultado.importados > 0 ? '🎉' : '⚠️'}
           </div>
           <h3 style={{ fontSize:'18px', fontWeight:700, color:C.text, margin:'0 0 6px' }}>
-            Importação concluída!
+            {interrompido ? 'Importação interrompida' : 'Importação concluída!'}
           </h3>
           <p style={{ fontSize:'13px', color:C.muted, margin:0 }}>
             {resultado.mensagem}
           </p>
         </div>
+
+        {interrompido && (
+          <div style={{ background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)', borderRadius:'8px', padding:'12px 14px', marginBottom:'16px', fontSize:'12px', color:'#f59e0b', lineHeight:1.5 }}>
+            ⚠️ {interrompido}
+          </div>
+        )}
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'20px' }}>
           <div style={{ background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:'10px', padding:'16px', textAlign:'center' }}>

@@ -36,6 +36,8 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
   const [resultado, setResultado]     = useState<ResultadoImportacao | null>(null)
   const [expandirErros, setExpandirErros] = useState(false)
   const [dragOver, setDragOver]       = useState(false)
+  const [progresso, setProgresso]     = useState({ feitos: 0, total: 0 })
+  const [interrompido, setInterrompido] = useState('')
 
   const alunosValidos   = alunos.filter(a => a.valido)
   const alunosInvalidos = alunos.filter(a => !a.valido)
@@ -71,29 +73,78 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
     if (file) processarArquivo(file)
   }, [])
 
-  const importar = async () => {
-    setEtapa('importando')
-    try {
-      const payload = alunosValidos.map(a => ({
-        nome:            a.nome,
-        cpf:             a.cpfLimpo,
-        cargo:           a.cargo,
-        setor:           a.setor,       // coluna H — Setor/Turma
-        data_nascimento: a.data_nascimento,
-        data_admissao:   a.data_admissao,
-        matricula:       a.matricula,
-        origem:          a.origem,       // coluna G — era centro_custo
-      }))
+  // Cada aluno custa 3-4 queries sequenciais + bcrypt no backend. Uma planilha de
+  // 1745 alunos virou ~6000 round-trips em série e estourou o proxy_read_timeout
+  // do Nginx (60s, default). O navegador mostrou "erro de CORS" — que era o
+  // timeout: a resposta de erro do proxy sai sem Access-Control-Allow-Origin.
+  // O backend seguiu processando e inseriu 1623 alunos que o usuário nunca viu.
+  // Fatiar aqui resolve na raiz; aumentar o timeout só adiaria para a próxima
+  // planilha maior.
+  const TAMANHO_BLOCO = 100
 
-      const res = await (usuariosAPI as any).importarCsv(payload) as ResultadoImportacao
-      setResultado(res)
-      setEtapa('resultado')
-      if (res.importados > 0) {
-        onSucesso(res.importados)
+  const importar = async () => {
+    setErro('')
+    setInterrompido('')
+    setEtapa('importando')
+
+    const payload = alunosValidos.map(a => ({
+      nome:            a.nome,
+      cpf:             a.cpfLimpo,
+      cargo:           a.cargo,
+      setor:           a.setor,       // coluna H — Setor/Turma
+      data_nascimento: a.data_nascimento,
+      data_admissao:   a.data_admissao,
+      matricula:       a.matricula,
+      origem:          a.origem,       // coluna G — era centro_custo
+    }))
+
+    setProgresso({ feitos: 0, total: payload.length })
+
+    // Acumulador no mesmo formato do backend — a UI de resultado não muda.
+    const acumulado: ResultadoImportacao = {
+      importados: 0,
+      erros:      0,
+      detalhes:   [],
+      falhas:     [],
+    }
+    let falhou = ''
+
+    for (let i = 0; i < payload.length; i += TAMANHO_BLOCO) {
+      const bloco = payload.slice(i, i + TAMANHO_BLOCO)
+      try {
+        // Sequencial de propósito: Promise.all multiplicaria a carga no banco e
+        // recriaria exatamente o problema que o fatiamento resolve.
+        const res = await (usuariosAPI as any).importarCsv(bloco) as ResultadoImportacao
+        acumulado.importados += res.importados ?? 0
+        acumulado.erros      += res.erros ?? 0
+        acumulado.detalhes    = acumulado.detalhes.concat(res.detalhes ?? [])
+        acumulado.falhas      = acumulado.falhas.concat(res.falhas ?? [])
+        setProgresso({ feitos: Math.min(i + bloco.length, payload.length), total: payload.length })
+      } catch (e: any) {
+        // Para o laço, mas PRESERVA o que já entrou. Descartar aqui foi o que
+        // confundiu o diagnóstico da vez passada: os alunos estavam no banco e
+        // a tela não mostrava nada.
+        falhou = e.message ?? 'Erro na importação'
+        break
       }
-    } catch (e: any) {
-      setErro(e.message ?? 'Erro na importação')
-      setEtapa('preview')
+    }
+
+    if (falhou) {
+      setInterrompido(
+        `A importação foi interrompida (${falhou}). Os ${acumulado.importados} registro(s) ` +
+        `acima já foram gravados. Reenviar a mesma planilha é seguro: os já cadastrados ` +
+        `serão apenas rejeitados por CPF duplicado.`
+      )
+    }
+
+    acumulado.mensagem = falhou
+      ? `${acumulado.importados} aluno(s) importado(s) antes da interrupção. ${acumulado.erros} erro(s).`
+      : `${acumulado.importados} aluno(s) importado(s) com sucesso. ${acumulado.erros} erro(s).`
+
+    setResultado(acumulado)
+    setEtapa('resultado')
+    if (acumulado.importados > 0) {
+      onSucesso(acumulado.importados)
     }
   }
 
@@ -344,11 +395,18 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
       <div style={{ padding:'48px 24px', textAlign:'center' }}>
         <div style={{ width:'48px', height:'48px', border:`3px solid ${C.border}`, borderTopColor:C.blue, borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
         <p style={{ fontSize:'15px', fontWeight:600, color:C.text, margin:'0 0 6px' }}>
-          Importando alunos...
+          Importando {progresso.feitos} de {progresso.total}...
         </p>
-        <p style={{ fontSize:'13px', color:C.muted, margin:0 }}>
-          Cadastrando {alunosValidos.length} aluno{alunosValidos.length!==1?'s':''} e criando matrículas automáticas
+        <p style={{ fontSize:'13px', color:C.muted, margin:'0 0 16px' }}>
+          Cadastrando em blocos de {TAMANHO_BLOCO} e criando matrículas automáticas.
+          Não feche esta janela.
         </p>
+        <div style={{ maxWidth:'320px', margin:'0 auto', height:'6px', background:C.surface2, borderRadius:'3px', overflow:'hidden' }}>
+          <div style={{
+            width: `${progresso.total ? Math.round((progresso.feitos / progresso.total) * 100) : 0}%`,
+            height:'100%', background:C.blue, transition:'width 200ms',
+          }} />
+        </div>
       </div>
     )
   }
@@ -359,15 +417,21 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
       <div style={{ padding:'24px' }}>
         <div style={{ textAlign:'center', marginBottom:'24px' }}>
           <div style={{ fontSize:'48px', marginBottom:'12px' }}>
-            {resultado.importados > 0 ? '🎉' : '⚠️'}
+            {interrompido ? '⚠️' : resultado.importados > 0 ? '🎉' : '⚠️'}
           </div>
           <h3 style={{ fontSize:'18px', fontWeight:700, color:C.text, margin:'0 0 6px' }}>
-            Importação concluída!
+            {interrompido ? 'Importação interrompida' : 'Importação concluída!'}
           </h3>
           <p style={{ fontSize:'13px', color:C.muted, margin:0 }}>
             {resultado.mensagem}
           </p>
         </div>
+
+        {interrompido && (
+          <div style={{ background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)', borderRadius:'8px', padding:'12px 14px', marginBottom:'16px', fontSize:'12px', color:'#f59e0b', lineHeight:1.5 }}>
+            ⚠️ {interrompido}
+          </div>
+        )}
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'20px' }}>
           <div style={{ background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:'10px', padding:'16px', textAlign:'center' }}>
