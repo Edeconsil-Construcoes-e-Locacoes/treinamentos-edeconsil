@@ -310,6 +310,11 @@ export const turmasAPI = {
     icone?: string; cor?: string; status?: string; instrutor_id?: string | null
   }) => apiRequest(`/turmas/${id}`, { method: 'PUT', body: JSON.stringify(dados) }),
   excluir: (id: string) => apiRequest(`/turmas/${id}`, { method: 'DELETE' }),
+  importar: (turmas: unknown[]) =>
+    apiRequest('/turmas/importar', {
+      method: 'POST',
+      body: JSON.stringify({ turmas }),
+    }),
 }
 
 export const matrizAPI = {

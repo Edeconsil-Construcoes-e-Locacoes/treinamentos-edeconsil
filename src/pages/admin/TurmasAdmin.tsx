@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Users, BookOpen, GraduationCap, RefreshCw, Pencil, Trash2, Plus, X } from 'lucide-react'
+import { Search, Users, BookOpen, GraduationCap, RefreshCw, Pencil, Trash2, Plus, X, Download } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { turmasAPI } from '../../services/api'
+import { exportarTurmasExcel, nomeArquivoTurmas } from '../../utils/exportarTurmasExcel'
+import { ImportarTurmasModal } from '../../components/admin/ImportarTurmasModal'
 import { useBreakpoint } from '../../hooks/useMobile'
 
 interface TurmasAdminProps {
@@ -64,6 +66,24 @@ export function TurmasAdmin({ onNavigate, onLogout }: TurmasAdminProps) {
     nome: '', cargo_grupo: '', setor: '', responsavel: '',
     icone: '🏢', cor: '#0d2550', status: 'ativa', instrutor_id: ''
   })
+  const [exportando,   setExportando]   = useState(false)
+  const [modalImportar, setModalImportar] = useState(false)
+
+  // Exporta o que está na tela (turmasFiltradas respeita busca e filtro). Sem
+  // menu todos/filtrados como em AlunosAdmin: são ~20 turmas, não 500.
+  // O catch loga: `.catch(() => {})` já escondeu um 500 por dois meses aqui.
+  const exportar = async () => {
+    if (exportando) return
+    setExportando(true)
+    try {
+      await exportarTurmasExcel(turmasFiltradas, nomeArquivoTurmas())
+    } catch (err) {
+      console.error('Erro ao exportar turmas:', err)
+      alert('Não foi possível gerar a planilha.')
+    } finally {
+      setExportando(false)
+    }
+  }
 
   const abrirCriar = () => {
     setFormTurma({ nome: '', cargo_grupo: '', setor: '', responsavel: '', icone: '🏢', cor: '#0d2550', status: 'ativa', instrutor_id: '' })
@@ -178,6 +198,43 @@ export function TurmasAdmin({ onNavigate, onLogout }: TurmasAdminProps) {
           >
             <Plus size={14} />
             Nova Turma
+          </button>
+          <button
+            onClick={exportar}
+            disabled={exportando}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 16px', background: 'none',
+              border: `1.5px solid ${C.blue}`, borderRadius: '8px',
+              fontSize: '13px', fontWeight: 600, color: C.blue,
+              cursor: exportando ? 'not-allowed' : 'pointer',
+              opacity: exportando ? 0.6 : 1, transition: 'all 150ms',
+            }}
+            onMouseEnter={e => { if (!exportando) e.currentTarget.style.background = 'rgba(26,86,255,0.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+          >
+            <Download size={15} />
+            {exportando ? 'Exportando...' : 'Exportar'}
+          </button>
+          <button
+            onClick={() => setModalImportar(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 16px', background: 'none',
+              border: `1.5px solid ${C.blue}`, borderRadius: '8px',
+              fontSize: '13px', fontWeight: 600, color: C.blue,
+              cursor: 'pointer', transition: 'all 150ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(26,86,255,0.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Importar planilha
           </button>
           <button
             onClick={carregar}
@@ -622,6 +679,44 @@ export function TurmasAdmin({ onNavigate, onLogout }: TurmasAdminProps) {
                 Salvar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Importar Planilha */}
+      {modalImportar && (
+        <div
+          onClick={() => setModalImportar(false)}
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.60)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background:C.surface, borderRadius:'16px', width:'100%', maxWidth:'780px', maxHeight:'90vh', overflowY:'auto', border:`1px solid ${C.border}`, boxShadow:'0 32px 80px rgba(0,0,0,0.4)' }}
+          >
+            <div style={{ padding:'20px 24px', borderBottom:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, background:C.surface, zIndex:1 }}>
+              <div>
+                <h2 style={{ fontSize:'16px', fontWeight:700, color:C.text, margin:'0 0 2px' }}>
+                  Importar Turmas — Planilha Excel
+                </h2>
+                <p style={{ fontSize:'12px', color:C.muted, margin:0 }}>
+                  Colunas: Nome da turma · Setor · Responsável
+                </p>
+              </div>
+              <button
+                onClick={() => setModalImportar(false)}
+                style={{ background:'none', border:`1px solid ${C.border}`, borderRadius:'8px', width:'32px', height:'32px', cursor:'pointer', fontSize:'18px', color:C.muted, display:'flex', alignItems:'center', justifyContent:'center' }}
+              >
+                ×
+              </button>
+            </div>
+            <ImportarTurmasModal
+              onFechar={() => setModalImportar(false)}
+              onSucesso={async (total) => {
+                setModalImportar(false)
+                await carregar()
+                console.log(`${total} turma(s) importadas`)
+              }}
+            />
           </div>
         </div>
       )}
