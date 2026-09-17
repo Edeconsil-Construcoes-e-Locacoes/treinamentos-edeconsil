@@ -94,7 +94,7 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
   const carregarAlunos = useCallback(async () => {
     setCarregando(true)
     try {
-      const resp = await usuariosAPI.listar({ limite: '500', perfil: 'colaborador' }) as any
+      const resp = await usuariosAPI.listar({ limite: '2000', perfil: 'colaborador' }) as any
       // API retorna { usuarios: [], total: N } — não um array direto
       const lista: any[] = Array.isArray(resp) ? resp : (resp?.usuarios ?? [])
       // O `...u` preserva o que a API manda e a normalização não cobre:
@@ -384,9 +384,9 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
                       </button>
                     </>
                   )}
-                  {alunos.length >= 500 && (
+                  {alunos.length >= 2000 && (
                     <p style={{ fontSize: '10px', color: '#f59e0b', margin: '6px 8px 2px', lineHeight: 1.4 }}>
-                      A listagem traz no máximo 500 — pode haver alunos fora desta exportação.
+                      A listagem traz no máximo 2000 — pode haver alunos fora desta exportação.
                     </p>
                   )}
                 </div>

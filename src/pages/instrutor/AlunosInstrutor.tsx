@@ -104,7 +104,7 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
     if (!turmaId) return
     setCarregando(true)
     try {
-      const resp = await usuariosAPI.listar({ limite: '500', perfil: 'colaborador', turma_id: turmaId }) as any
+      const resp = await usuariosAPI.listar({ limite: '2000', perfil: 'colaborador', turma_id: turmaId }) as any
       const lista: any[] = Array.isArray(resp) ? resp : (resp?.usuarios ?? [])
       // Mesma correção do AlunosAdmin: sem o `...u` o objeto ia podado para
       // o modal de edição e os filtros de origem/turma nunca casavam.
@@ -373,9 +373,9 @@ export function AlunosInstrutor({ onNavigate: _onNavigate }: AlunosInstrutorProp
                       </button>
                     </>
                   )}
-                  {alunos.length >= 500 && (
+                  {alunos.length >= 2000 && (
                     <p style={{ fontSize: '10px', color: '#f59e0b', margin: '6px 8px 2px', lineHeight: 1.4 }}>
-                      A listagem traz no máximo 500 — pode haver alunos fora desta exportação.
+                      A listagem traz no máximo 2000 — pode haver alunos fora desta exportação.
                     </p>
                   )}
                 </div>
