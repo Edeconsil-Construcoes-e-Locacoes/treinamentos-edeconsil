@@ -62,8 +62,8 @@ export const imprimirFrequencia = (dados: DadosFrequencia) => {
       <td>${esc(aluno.cargo)}</td>
       <td style="text-align:center;">${formatarData(aluno.data_emissao)}</td>
       <td></td>
-      <td></td>
-      <td></td>
+      <td style="text-align:center;">${formatarData(aluno.data_emissao)}</td>
+      <td style="text-align:center;">E</td>
     </tr>
   `).join('')
 
