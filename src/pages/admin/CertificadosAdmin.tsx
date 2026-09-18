@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Search, FileDown, Upload, LayoutGrid, List, Download } from 'lucide-react'
+import { Search, FileDown, Upload, LayoutGrid, List, Download, Tag } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { certificadosAPI, usuariosAPI } from '../../services/api'
 import { imprimirCertificado } from '../../utils/imprimirCertificado'
+import { ModalNomearCertificados } from '../../components/admin/ModalNomearCertificados'
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 
@@ -28,6 +29,7 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
   const [busca,        setBusca]        = useState('')
   const [pagina,       setPagina]       = useState(1)
   const [modalUpload,   setModalUpload]   = useState(false)
+  const [modalNomear,   setModalNomear]   = useState(false)
   const [uploadForm,    setUploadForm]    = useState({
     usuario_id: '', titulo_externo: '', entidade_emissora: '',
     data_emissao: '', data_validade: '', carga_horaria: '',
@@ -173,6 +175,19 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
             <FileDown size={16} />
             Modelo de Certificado
           </a>
+          <button
+            onClick={() => setModalNomear(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 16px', background: 'none',
+              border: '1.5px solid #0d2550', color: '#0d2550',
+              borderRadius: '8px', fontWeight: 700,
+              fontSize: '13px', cursor: 'pointer',
+            }}
+          >
+            <Tag size={16} />
+            Nomes no Certificado
+          </button>
           </div>
         </div>
 
@@ -495,6 +510,10 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
             </div>
           </div>
         </div>
+      )}
+
+      {modalNomear && (
+        <ModalNomearCertificados onFechar={() => setModalNomear(false)} />
       )}
     </LayoutAdmin>
   )
