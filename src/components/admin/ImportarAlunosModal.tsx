@@ -22,6 +22,8 @@ interface ResultadoImportacao {
   mensagem?:  string
   detalhes:   any[]
   falhas:     any[]
+  cargosDivergentes?:    { cargoPlanilha: string; cargoOficial: string; quantidade: number }[]
+  cargosNaoCadastrados?: { cargo: string; quantidade: number }[]
 }
 
 export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: ImportarAlunosModalProps) {
@@ -107,6 +109,10 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
       detalhes:   [],
       falhas:     [],
     }
+    // Merge por chave, não concat: o mesmo cargo pode aparecer em blocos
+    // diferentes, e a quantidade tem que SOMAR, sem duplicar a entrada.
+    const divergentesPorCargo    = new Map<string, { cargoOficial: string; quantidade: number }>()
+    const naoCadastradosPorCargo = new Map<string, number>()
     let falhou = ''
 
     for (let i = 0; i < payload.length; i += TAMANHO_BLOCO) {
@@ -119,6 +125,19 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
         acumulado.erros      += res.erros ?? 0
         acumulado.detalhes    = acumulado.detalhes.concat(res.detalhes ?? [])
         acumulado.falhas      = acumulado.falhas.concat(res.falhas ?? [])
+        for (const d of res.cargosDivergentes ?? []) {
+          const atual = divergentesPorCargo.get(d.cargoPlanilha)
+          divergentesPorCargo.set(d.cargoPlanilha, {
+            cargoOficial: d.cargoOficial,
+            quantidade:   (atual?.quantidade ?? 0) + d.quantidade,
+          })
+        }
+        for (const n of res.cargosNaoCadastrados ?? []) {
+          naoCadastradosPorCargo.set(
+            n.cargo,
+            (naoCadastradosPorCargo.get(n.cargo) ?? 0) + n.quantidade
+          )
+        }
         setProgresso({ feitos: Math.min(i + bloco.length, payload.length), total: payload.length })
       } catch (e: any) {
         // Para o laço, mas PRESERVA o que já entrou. Descartar aqui foi o que
@@ -140,6 +159,13 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
     acumulado.mensagem = falhou
       ? `${acumulado.importados} aluno(s) importado(s) antes da interrupção. ${acumulado.erros} erro(s).`
       : `${acumulado.importados} aluno(s) importado(s) com sucesso. ${acumulado.erros} erro(s).`
+
+    acumulado.cargosDivergentes = [...divergentesPorCargo.entries()].map(
+      ([cargoPlanilha, v]) => ({ cargoPlanilha, cargoOficial: v.cargoOficial, quantidade: v.quantidade })
+    )
+    acumulado.cargosNaoCadastrados = [...naoCadastradosPorCargo.entries()].map(
+      ([cargo, quantidade]) => ({ cargo, quantidade })
+    )
 
     setResultado(acumulado)
     setEtapa('resultado')
@@ -464,6 +490,46 @@ export function ImportarAlunosModal({ onFechar, onSucesso, turmasDoBanco }: Impo
                       {d.senha_inicial}
                     </p>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(resultado.cargosDivergentes?.length ?? 0) > 0 && (
+          <div style={{ marginBottom:'16px' }}>
+            <p style={{ fontSize:'12px', fontWeight:700, color:'#f59e0b', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.5px' }}>
+              Cargos com grafia divergente:
+            </p>
+            <p style={{ fontSize:'11px', color:C.muted, margin:'0 0 8px' }}>
+              Estes alunos não verão os cursos do cargo até a grafia ser corrigida.
+            </p>
+            <div style={{ maxHeight:'200px', overflowY:'auto', border:'1px solid rgba(245,158,11,0.25)', borderRadius:'8px', background:'rgba(245,158,11,0.06)' }}>
+              {resultado.cargosDivergentes!.map((d, i) => (
+                <div key={i} style={{ padding:'8px 12px', borderBottom: i<resultado.cargosDivergentes!.length-1?'1px solid rgba(245,158,11,0.20)':'none' }}>
+                  <p style={{ fontSize:'12px', color:'#f59e0b', margin:0 }}>
+                    <strong>{d.cargoPlanilha}</strong> → deveria ser "{d.cargoOficial}" ({d.quantidade} aluno{d.quantidade!==1?'s':''})
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(resultado.cargosNaoCadastrados?.length ?? 0) > 0 && (
+          <div style={{ marginBottom:'16px' }}>
+            <p style={{ fontSize:'12px', fontWeight:700, color:'#f59e0b', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.5px' }}>
+              Cargos não cadastrados:
+            </p>
+            <p style={{ fontSize:'11px', color:C.muted, margin:'0 0 8px' }}>
+              Cadastre estes cargos e vincule seus cursos na Matriz de Cursos.
+            </p>
+            <div style={{ maxHeight:'200px', overflowY:'auto', border:'1px solid rgba(245,158,11,0.25)', borderRadius:'8px', background:'rgba(245,158,11,0.06)' }}>
+              {resultado.cargosNaoCadastrados!.map((n, i) => (
+                <div key={i} style={{ padding:'8px 12px', borderBottom: i<resultado.cargosNaoCadastrados!.length-1?'1px solid rgba(245,158,11,0.20)':'none' }}>
+                  <p style={{ fontSize:'12px', color:'#f59e0b', margin:0 }}>
+                    <strong>{n.cargo}</strong> ({n.quantidade} aluno{n.quantidade!==1?'s':''})
+                  </p>
                 </div>
               ))}
             </div>
