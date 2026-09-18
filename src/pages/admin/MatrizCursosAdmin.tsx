@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Users, BookOpen, RefreshCw, ListChecks, X, Check, Plus, Pencil } from 'lucide-react'
+import { Search, Users, BookOpen, RefreshCw, ListChecks, X, Check, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { matrizAPI, cursosAPI, cargosAPI } from '../../services/api'
@@ -287,6 +287,19 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
       setErroCargo(err?.message ?? 'Erro ao salvar cargo.')
     } finally {
       setSalvandoCargo(false)
+    }
+  }
+
+  // window.confirm simples, no padrão do excluirTurma de TurmasAdmin — sem modal.
+  // O catch mostra a mensagem do backend (não .catch(()=>{})): é o que revela
+  // "cargo em uso" quando o card ficou desatualizado entre carregar() e o clique.
+  const excluirCargo = async (id: string, nome: string) => {
+    if (!window.confirm(`Excluir o cargo "${nome}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      await cargosAPI.excluir(id)
+      carregar()
+    } catch (err: any) {
+      alert(err?.message ?? 'Erro ao excluir cargo')
     }
   }
 
@@ -616,6 +629,29 @@ export function MatrizCursosAdmin({ onNavigate, onLogout }: MatrizCursosAdminPro
                     >
                       <Pencil size={14} />
                       Editar
+                    </button>
+                    <button
+                      onClick={() => !(alunos > 0 || cursos > 0) && excluirCargo(item.id, item.nome)}
+                      disabled={alunos > 0 || cursos > 0}
+                      title={
+                        alunos > 0 || cursos > 0
+                          ? `Cargo em uso (${alunos} aluno(s), ${cursos} curso(s)) — reatribua antes de excluir`
+                          : undefined
+                      }
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: '6px',
+                        padding: '9px 12px', background: 'none',
+                        border: `1px solid ${alunos > 0 || cursos > 0 ? C.border : '#ef4444'}`,
+                        borderRadius: '8px',
+                        fontSize: '12px', fontWeight: 600,
+                        color: alunos > 0 || cursos > 0 ? C.muted : '#ef4444',
+                        cursor: alunos > 0 || cursos > 0 ? 'not-allowed' : 'pointer',
+                        opacity: alunos > 0 || cursos > 0 ? 0.6 : 1,
+                      }}
+                    >
+                      <Trash2 size={14} />
+                      Excluir
                     </button>
                   </div>
                 </div>

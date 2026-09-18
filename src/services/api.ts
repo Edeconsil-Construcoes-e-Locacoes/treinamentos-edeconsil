@@ -346,6 +346,7 @@ export const cargosAPI = {
       method: 'PUT',
       body: JSON.stringify({ nome, setor: setor || null }),
     }),
+  excluir: (id: string) => apiRequest(`/admin/cargos/${id}`, { method: 'DELETE' }),
 }
 
 export const indicadoresAPI = {
