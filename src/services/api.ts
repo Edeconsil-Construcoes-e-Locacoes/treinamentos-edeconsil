@@ -246,6 +246,11 @@ export const certificadosAPI = {
     return apiRequest(`/admin/certificados${q}`)
   },
 
+  meusCertificadosInstrutor: (params?: Record<string, string>) => {
+    const q = params ? '?' + new URLSearchParams(params).toString() : ''
+    return apiRequest(`/instrutor/meus-certificados${q}`)
+  },
+
   uploadExterno: (formData: FormData) =>
     apiRequest('/admin/certificados', { method: 'POST', body: formData }),
 

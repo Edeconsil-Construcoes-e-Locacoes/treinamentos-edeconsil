@@ -34,24 +34,28 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
   const [usuarios,      setUsuarios]      = useState<any[]>([])
   const [enviando,      setEnviando]      = useState(false)
   const [visuMural,     setVisuMural]     = useState(true)
+  // turmaId segue existindo só para o modal de certificado externo (escolher o
+  // aluno da própria turma) — não é mais usado para filtrar a LISTA de
+  // certificados, que agora vem por instrutor_id do curso, direto do servidor.
   const [turmaId,       setTurmaId]       = useState<string | null>(null)
+  const [semVinculo,    setSemVinculo]    = useState(false)
 
   useEffect(() => {
     instrutorAPI.minhaTurma().then((t: any) => {
       if (t?.id) setTurmaId(String(t.id))
-    }).catch(() => {})
+    }).catch((err) => console.error('Erro ao buscar turma do instrutor:', err))
   }, [])
 
   const carregar = async (p = 1, b = busca) => {
-    if (!turmaId) return
     setCarregando(true)
     try {
-      const params: Record<string, string> = { pagina: String(p), limite: '20', turma_id: turmaId }
+      const params: Record<string, string> = { pagina: String(p), limite: '20' }
       if (b) params.busca = b
-      const data = await certificadosAPI.listarAdmin(params) as any
+      const data = await certificadosAPI.meusCertificadosInstrutor(params) as any
       setCertificados(data.certificados ?? [])
       setTotal(data.total ?? 0)
       setPagina(p)
+      setSemVinculo(Boolean(data.semVinculo))
     } catch (err) {
       console.error(err)
     } finally {
@@ -59,9 +63,7 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
     }
   }
 
-  useEffect(() => {
-    if (turmaId) carregar()
-  }, [turmaId])
+  useEffect(() => { carregar() }, [])
 
   const abrirModalUpload = async () => {
     if (usuarios.length === 0 && turmaId) {
@@ -205,7 +207,9 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
               </div>
             ) : certificados.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '48px', color: C.muted, fontSize: '14px' }}>
-                Nenhum certificado encontrado.
+                {semVinculo
+                  ? 'Você ainda não está vinculado como instrutor de nenhum curso. Peça ao administrador para vincular você a um curso na tela de Cursos.'
+                  : 'Nenhum certificado emitido nos seus cursos ainda.'}
               </div>
             ) : certificados.map((cert: any) => (
               <div key={cert.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
@@ -324,12 +328,14 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
               ) : certificados.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: '48px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '32px', marginBottom: '10px' }}>🏆</div>
+                    <div style={{ fontSize: '32px', marginBottom: '10px' }}>{semVinculo ? '🔗' : '🏆'}</div>
                     <p style={{ fontSize: '14px', color: C.text, margin: '0 0 4px', fontWeight: 600 }}>
-                      Nenhum certificado emitido ainda
+                      {semVinculo ? 'Sem curso vinculado' : 'Nenhum certificado emitido ainda'}
                     </p>
                     <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>
-                      Os certificados são gerados automaticamente quando um aluno é aprovado na avaliação final
+                      {semVinculo
+                        ? 'Você ainda não está vinculado como instrutor de nenhum curso. Peça ao administrador para vincular você a um curso na tela de Cursos.'
+                        : 'Nenhum certificado emitido nos seus cursos ainda.'}
                     </p>
                   </td>
                 </tr>

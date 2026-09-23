@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useTheme } from '../../contexts/ThemeContext'
-import { cursosAPI, turmasAPI } from '../../services/api'
+import { cursosAPI, turmasAPI, instrutoresAPI } from '../../services/api'
 
 interface CriarCursoProps {
   onFechar:  () => void
@@ -46,7 +46,8 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
   const [cargo,        setCargo]        = useState(cursoEditar?.cargo        ?? '')
   const [trilha]                         = useState(cursoEditar?.trilha       ?? '')
   const [cargaHoraria, setCargaHoraria] = useState(cursoEditar?.carga_horaria ?? '')
-  const [instrutor,    setInstrutor]    = useState(cursoEditar?.instrutor    ?? '')
+  const [instrutoresDisponiveis, setInstrutoresDisponiveis] = useState<any[]>([])
+  const [instrutorIdSelecionado, setInstrutorIdSelecionado] = useState<string>(cursoEditar?.instrutor_id ?? '')
   const [cor,          setCor]          = useState(cursoEditar?.cor          ?? '#1a56ff')
   const [icone,        setIcone]        = useState(cursoEditar?.icone        ?? '📚')
   const [notaMinima,   setNotaMinima]   = useState(cursoEditar?.nota_minima  ?? 70)
@@ -59,15 +60,29 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
 
   const stopKeys = useCallback((e: React.KeyboardEvent) => e.stopPropagation(), [])
 
+  // `instrutor` (texto) não é mais digitado — vem sempre do <select>, para nunca
+  // mais divergir da ficha (era o problema que a migration 027 corrigiu).
+  const nomeInstrutorSelecionado =
+    instrutoresDisponiveis.find(i => i.id === instrutorIdSelecionado)?.nome ?? ''
+
   useEffect(() => {
     turmasAPI.listar()
       .then((data: any) => setTurmasDisponiveis(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch((err) => console.error('Erro ao carregar turmas:', err))
+  }, [])
+
+  useEffect(() => {
+    instrutoresAPI.listar()
+      .then((data: any) => setInstrutoresDisponiveis(Array.isArray(data) ? data : []))
+      .catch((err) => console.error('Erro ao carregar instrutores:', err))
   }, [])
 
   useEffect(() => {
     if (cursoEditar?.turma_id) {
       setTurmaSelecionada(cursoEditar.turma_id)
+    }
+    if (cursoEditar?.instrutor_id) {
+      setInstrutorIdSelecionado(cursoEditar.instrutor_id)
     }
   }, [cursoEditar])
 
@@ -81,7 +96,7 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
     if (!titulo.trim())   { setErro('Título é obrigatório'); return }
     if (!slug.trim())     { setErro('Slug é obrigatório'); return }
     // Turma é opcional: curso sem turma fica visível para TODOS os alunos.
-    if (!instrutor.trim()) { setErro('Instrutor é obrigatório'); return }
+    if (!instrutorIdSelecionado) { setErro('Instrutor é obrigatório'); return }
 
     setSalvando(true)
     try {
@@ -93,7 +108,9 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
         cargo: cargo.trim() || null,
         trilha: trilha.trim() || null,
         carga_horaria: cargaHoraria.trim() || null,
-        instrutor: instrutor.trim(), cor, icone,
+        instrutor: nomeInstrutorSelecionado,
+        instrutor_id: instrutorIdSelecionado || null,
+        cor, icone,
         nota_minima: notaMinima, status,
       }
 
@@ -277,10 +294,20 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
         <div>
           <label style={labelStyle}>Instrutor <span style={{ color: '#ef4444' }}>*</span></label>
-          <input type="text" value={instrutor} onChange={e => setInstrutor(e.target.value)}
+          <select value={instrutorIdSelecionado} onChange={e => setInstrutorIdSelecionado(e.target.value)}
             onKeyDown={stopKeys} onFocus={onFocusI} onBlur={onBlurI}
-            placeholder="Nome do instrutor"
-            style={inputStyle} autoComplete="off" />
+            style={{ ...inputStyle, cursor: 'pointer', color: instrutorIdSelecionado ? C.text : C.muted }}>
+            <option value="">Selecione o instrutor</option>
+            {/* Ficha excluída depois de vinculada: injeta o id atual como option
+                para não perder a seleção — mesmo padrão de cargo órfão no
+                EditarAluno. */}
+            {instrutorIdSelecionado && !instrutoresDisponiveis.some(i => i.id === instrutorIdSelecionado) && (
+              <option value={instrutorIdSelecionado}>{cursoEditar?.instrutor || '(instrutor removido)'}</option>
+            )}
+            {instrutoresDisponiveis.map((i: any) => (
+              <option key={i.id} value={i.id}>{i.nome}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label style={labelStyle}>Carga horária</label>
@@ -321,7 +348,7 @@ export function CriarCurso({ onFechar, onSucesso, cursoEditar }: CriarCursoProps
             <div>
               <p style={{ fontSize: '13px', fontWeight: 700, color: C.text, margin: '0 0 2px' }}>{titulo}</p>
               <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>
-                {instrutor || 'Instrutor'} · {cargaHoraria || 'Carga?'} · Nota mín: {notaMinima}%
+                {nomeInstrutorSelecionado || 'Instrutor'} · {cargaHoraria || 'Carga?'} · Nota mín: {notaMinima}%
               </p>
             </div>
           </div>
