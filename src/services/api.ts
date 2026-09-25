@@ -251,6 +251,8 @@ export const certificadosAPI = {
     return apiRequest(`/instrutor/meus-certificados${q}`)
   },
 
+  conteudo: (id: string) => apiRequest(`/certificados/${id}/conteudo`),
+
   uploadExterno: (formData: FormData) =>
     apiRequest('/admin/certificados', { method: 'POST', body: formData }),
 
