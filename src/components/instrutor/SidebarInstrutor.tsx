@@ -50,8 +50,8 @@ export function SidebarInstrutor({ paginaAtual, onNavigate, onLogout, nome }: Si
       }}>
         <Logo height={32} />
         <div>
-          <div style={{ fontSize: '8px', fontWeight: 700, color: C.text, letterSpacing: '1.5px' }}>UNIVERSIDADE</div>
-          <div style={{ fontSize: '8px', color: C.blue, letterSpacing: '1px' }}>CORPORATIVA</div>
+          <div style={{ fontSize: '8px', fontWeight: 700, color: C.text, letterSpacing: '1.5px' }}>Portal de</div>
+          <div style={{ fontSize: '8px', color: C.blue, letterSpacing: '1px' }}>TREINAMENTOS</div>
         </div>
       </div>
 

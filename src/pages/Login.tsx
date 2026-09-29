@@ -192,10 +192,9 @@ export default function Login({ onLogin }: LoginProps) {
               color: '#ffffff',
               letterSpacing: '3px',
               lineHeight: 1.2,
-              textTransform: 'uppercase',
               margin: 0,
             }}>
-              Universidade
+              Portal de
             </span>
             <span style={{
               fontSize: '12px',
@@ -206,7 +205,7 @@ export default function Login({ onLogin }: LoginProps) {
               textTransform: 'uppercase',
               margin: 0,
             }}>
-              Corporativa
+              TREINAMENTOS
             </span>
           </div>
         </div>
