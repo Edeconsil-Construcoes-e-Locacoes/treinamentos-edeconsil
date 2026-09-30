@@ -15,7 +15,7 @@ export function IndicadoresInstrutor({ onNavigate }: {
   onNavigate: (page: string) => void
 }) {
   const { C } = useTheme()
-  const [abaCursos, setAbaCursos] = useState<'historico' | 'disponiveis' | 'certificados' | 'individual'>('historico')
+  const [abaCursos, setAbaCursos] = useState<'historico' | 'disponiveis' | 'certificados' | 'naoIniciados' | 'individual'>('historico')
   const [periodoHoras, setPeriodoHoras] = useState<'geral' | 'centro'>('geral')
   const [dados, setDados] = useState<any>(null)
   const [carregando, setCarregando] = useState(true)
@@ -27,6 +27,8 @@ export function IndicadoresInstrutor({ onNavigate }: {
   const [erroAlunos, setErroAlunos] = useState('')
   const [buscaAluno, setBuscaAluno] = useState('')
   const [somenteIniciaram, setSomenteIniciaram] = useState(false)
+  // Busca PRÓPRIA da aba "Não iniciados" — não compartilha com a do Indicador individual.
+  const [buscaNaoIniciado, setBuscaNaoIniciado] = useState('')
 
   useEffect(() => {
     indicadoresAPI.buscar()
@@ -52,6 +54,22 @@ export function IndicadoresInstrutor({ onNavigate }: {
   const alunosFiltrados = alunosIndividual
     .filter((a: any) => (a.nome ?? '').toLowerCase().includes(buscaAluno.toLowerCase()))
     .filter((a: any) => !somenteIniciaram || Number(a.cursos_concluidos) > 0)
+
+  // Aba "Não iniciados": sem progresso E sem certificado (campo `iniciou` do backend).
+  // Mesmos dados de buscarAlunos() — sem chamada extra. Ordena por admissão crescente
+  // comparando a string ISO (nunca new Date — fuso já causou bug); sem data vai pro fim.
+  const naoIniciados = alunosIndividual
+    .filter((a: any) => a.iniciou === false)
+    .sort((a: any, b: any) => {
+      const da = a.data_admissao ? String(a.data_admissao).slice(0, 10) : ''
+      const db = b.data_admissao ? String(b.data_admissao).slice(0, 10) : ''
+      if (!da && !db) return 0
+      if (!da) return 1
+      if (!db) return -1
+      return da.localeCompare(db)
+    })
+  const naoIniciadosFiltrados = naoIniciados
+    .filter((a: any) => (a.nome ?? '').toLowerCase().includes(buscaNaoIniciado.toLowerCase()))
 
   const semTurmaMsg = 'Nenhum colaborador cadastrado na sua turma. Fale com o RH para vincular colaboradores.'
 
@@ -317,6 +335,7 @@ export function IndicadoresInstrutor({ onNavigate }: {
               { key: 'historico',    label: 'Admissões Recentes'       },
               { key: 'disponiveis',  label: 'Treinamentos Disponíveis' },
               { key: 'certificados', label: 'Certificados'             },
+              { key: 'naoIniciados', label: 'Não iniciados'            },
               { key: 'individual',   label: 'Indicador individual'     },
             ].map(aba => (
               <button
@@ -429,6 +448,51 @@ export function IndicadoresInstrutor({ onNavigate }: {
                   </div>
                 ))}
               </div>
+            )
+          )}
+
+          {abaCursos === 'naoIniciados' && (
+            escopoCursos === 'sem_turma' ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                {semTurmaMsg}
+              </div>
+            ) : erroAlunos ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#ef4444', fontSize: '12px' }}>
+                {erroAlunos}
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: C.text, marginBottom: '8px' }}>
+                  {naoIniciados.length} colaborador(es) ainda não iniciaram nenhum curso
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                  <input
+                    value={buscaNaoIniciado}
+                    onChange={e => setBuscaNaoIniciado(e.target.value)}
+                    placeholder="Buscar por nome..."
+                    style={{ flex: 1, minWidth: '140px', padding: '7px 10px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '12px', color: C.text }}
+                  />
+                </div>
+                <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {naoIniciadosFiltrados.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontSize: '12px' }}>
+                      {buscaNaoIniciado ? 'Nenhum colaborador encontrado.' : 'Todos os colaboradores já iniciaram algum curso.'}
+                    </div>
+                  ) : naoIniciadosFiltrados.map((a: any) => (
+                    <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', padding: '8px 10px', background: C.surface2, borderRadius: '8px', border: `0.5px solid ${C.border}` }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: C.text }}>{a.nome}</div>
+                        <div style={{ fontSize: '10px', color: C.muted }}>{a.cargo ?? '—'} · {a.turma_nome ?? '—'}</div>
+                      </div>
+                      <span style={{ fontSize: '10px', color: C.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {a.data_admissao
+                          ? `Admitido em ${String(a.data_admissao).slice(0, 10).split('-').reverse().join('/')}`
+                          : 'Sem data de admissão'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )
           )}
 
