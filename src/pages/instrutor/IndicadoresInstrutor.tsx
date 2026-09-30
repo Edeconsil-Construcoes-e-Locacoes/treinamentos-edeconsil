@@ -5,11 +5,12 @@ import {
 } from 'recharts'
 import {
   ChevronRight, ChevronDown, Filter, Calendar,
-  AlertTriangle, TrendingUp
+  AlertTriangle, TrendingUp, Download
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { indicadoresAPI } from '../../services/api'
 import { BarraProgresso } from '../../components/BarraProgresso'
+import { exportarNaoIniciadosExcel, nomeArquivoNaoIniciados } from '../../utils/exportarNaoIniciadosExcel'
 
 export function IndicadoresInstrutor({ onNavigate }: {
   onNavigate: (page: string) => void
@@ -29,6 +30,7 @@ export function IndicadoresInstrutor({ onNavigate }: {
   const [somenteIniciaram, setSomenteIniciaram] = useState(false)
   // Busca PRÓPRIA da aba "Não iniciados" — não compartilha com a do Indicador individual.
   const [buscaNaoIniciado, setBuscaNaoIniciado] = useState('')
+  const [exportandoNaoIniciados, setExportandoNaoIniciados] = useState(false)
 
   useEffect(() => {
     indicadoresAPI.buscar()
@@ -70,6 +72,20 @@ export function IndicadoresInstrutor({ onNavigate }: {
     })
   const naoIniciadosFiltrados = naoIniciados
     .filter((a: any) => (a.nome ?? '').toLowerCase().includes(buscaNaoIniciado.toLowerCase()))
+
+  // Exporta exatamente o que está na tela (busca + ordem por admissão).
+  const exportarNaoIniciados = async () => {
+    if (exportandoNaoIniciados) return
+    setExportandoNaoIniciados(true)
+    try {
+      await exportarNaoIniciadosExcel(naoIniciadosFiltrados, nomeArquivoNaoIniciados())
+    } catch (err) {
+      console.error('Erro ao exportar não iniciados:', err)
+      alert('Não foi possível gerar a planilha.')
+    } finally {
+      setExportandoNaoIniciados(false)
+    }
+  }
 
   const semTurmaMsg = 'Nenhum colaborador cadastrado na sua turma. Fale com o RH para vincular colaboradores.'
 
@@ -472,6 +488,21 @@ export function IndicadoresInstrutor({ onNavigate }: {
                     placeholder="Buscar por nome..."
                     style={{ flex: 1, minWidth: '140px', padding: '7px 10px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '12px', color: C.text }}
                   />
+                  <button
+                    onClick={exportarNaoIniciados}
+                    disabled={exportandoNaoIniciados || naoIniciadosFiltrados.length === 0}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '7px 12px', background: 'none',
+                      border: `1px solid ${C.blue}`, borderRadius: '8px',
+                      fontSize: '11px', fontWeight: 600, color: C.blue, whiteSpace: 'nowrap',
+                      cursor: exportandoNaoIniciados || naoIniciadosFiltrados.length === 0 ? 'not-allowed' : 'pointer',
+                      opacity: exportandoNaoIniciados || naoIniciadosFiltrados.length === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    <Download size={13} />
+                    {exportandoNaoIniciados ? 'Exportando...' : 'Exportar'}
+                  </button>
                 </div>
                 <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {naoIniciadosFiltrados.length === 0 ? (
