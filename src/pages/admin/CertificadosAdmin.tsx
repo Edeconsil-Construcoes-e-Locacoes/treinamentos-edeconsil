@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { Search, FileDown, Upload, LayoutGrid, List, Download, Tag } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
-import { certificadosAPI, usuariosAPI } from '../../services/api'
+import { certificadosAPI } from '../../services/api'
 import { imprimirCertificado } from '../../utils/imprimirCertificado'
 import { ModalNomearCertificados } from '../../components/admin/ModalNomearCertificados'
+import { BuscaColaborador } from '../../components/BuscaColaborador'
 
 const BACKEND_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api').replace(/\/api\/?$/, '')
 
@@ -35,7 +36,8 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
     data_emissao: '', data_validade: '', carga_horaria: '',
   })
   const [uploadArquivo, setUploadArquivo] = useState<File | null>(null)
-  const [usuarios,      setUsuarios]      = useState<any[]>([])
+  // BuscaColaborador não carrega a lista inteira — guarda só o aluno escolhido.
+  const [alunoSelecionado, setAlunoSelecionado] = useState<{ id: string; nome: string } | null>(null)
   const [enviando,      setEnviando]      = useState(false)
   const [visuMural,     setVisuMural]     = useState(true)
 
@@ -57,16 +59,7 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
 
   useEffect(() => { carregar() }, [])
 
-  const abrirModalUpload = async () => {
-    if (usuarios.length === 0) {
-      try {
-        const data = await usuariosAPI.listar({ perfil: 'colaborador', limite: '500' }) as any
-        const lista = Array.isArray(data) ? data : (data.usuarios ?? [])
-        setUsuarios(lista.filter((u: any) => u.perfil === 'colaborador'))
-      } catch (err) {
-        console.error('Erro ao buscar alunos:', err)
-      }
-    }
+  const abrirModalUpload = () => {
     setModalUpload(true)
   }
 
@@ -84,6 +77,7 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
       setModalUpload(false)
       setUploadArquivo(null)
       setUploadForm({ usuario_id: '', titulo_externo: '', entidade_emissora: '', data_emissao: '', data_validade: '', carga_horaria: '' })
+      setAlunoSelecionado(null)
       carregar(1)
     } catch (err: any) {
       alert(err?.message ?? 'Erro ao enviar.')
@@ -433,16 +427,11 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
             </h2>
 
             <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Aluno *</label>
-            <select
-              value={uploadForm.usuario_id}
-              onChange={e => setUploadForm(f => ({ ...f, usuario_id: e.target.value }))}
-              style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, marginBottom: '14px' }}
-            >
-              <option value="">Selecione o aluno</option>
-              {usuarios.map((u: any) => (
-                <option key={u.id} value={u.id}>{u.nome}</option>
-              ))}
-            </select>
+            <BuscaColaborador
+              selecionado={alunoSelecionado}
+              onSelecionar={u => { setAlunoSelecionado(u); setUploadForm(f => ({ ...f, usuario_id: u.id })) }}
+              onLimpar={() => { setAlunoSelecionado(null); setUploadForm(f => ({ ...f, usuario_id: '' })) }}
+            />
 
             <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Título do Certificado *</label>
             <input
