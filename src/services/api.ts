@@ -256,6 +256,9 @@ export const certificadosAPI = {
   uploadExterno: (formData: FormData) =>
     apiRequest('/admin/certificados', { method: 'POST', body: formData }),
 
+  editarExterno: (id: string, fd: FormData) =>
+    apiRequest(`/admin/certificados/${id}`, { method: 'PUT', body: fd }),
+
   excluirExterno: (id: string) =>
     apiRequest(`/admin/certificados/${id}`, { method: 'DELETE' }),
 }

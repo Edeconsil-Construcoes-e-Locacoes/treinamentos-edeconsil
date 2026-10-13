@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, FileDown, Upload, LayoutGrid, List, Download, Tag } from 'lucide-react'
+import { Search, FileDown, Upload, LayoutGrid, List, Download, Tag, Pencil } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { certificadosAPI } from '../../services/api'
@@ -40,6 +40,16 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
   const [alunoSelecionado, setAlunoSelecionado] = useState<{ id: string; nome: string } | null>(null)
   const [enviando,      setEnviando]      = useState(false)
   const [visuMural,     setVisuMural]     = useState(true)
+
+  // Edição de certificado EXTERNO (o aluno não é editável).
+  const [certEditando,    setCertEditando]    = useState<any | null>(null)
+  const [editForm,        setEditForm]        = useState({
+    titulo_externo: '', entidade_emissora: '',
+    data_emissao: '', data_validade: '', carga_horaria: '',
+  })
+  const [editArquivo,     setEditArquivo]     = useState<File | null>(null)
+  const [salvandoEdicao,  setSalvandoEdicao]  = useState(false)
+  const [erroEdicao,      setErroEdicao]      = useState('')
 
   const carregar = async (p = 1, b = busca) => {
     setCarregando(true)
@@ -83,6 +93,47 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
       alert(err?.message ?? 'Erro ao enviar.')
     } finally {
       setEnviando(false)
+    }
+  }
+
+  const abrirEdicao = (cert: any) => {
+    setCertEditando(cert)
+    setEditForm({
+      titulo_externo:    cert.titulo_externo    ?? '',
+      entidade_emissora: cert.entidade_emissora ?? '',
+      // Fatia a string em vez de new Date — fuso já causou dia errado aqui.
+      data_emissao:      cert.data_emissao  ? String(cert.data_emissao).slice(0, 10)  : '',
+      data_validade:     cert.data_validade ? String(cert.data_validade).slice(0, 10) : '',
+      carga_horaria:     cert.carga_horaria ?? '',
+    })
+    setEditArquivo(null)
+    setErroEdicao('')
+  }
+
+  const salvarEdicao = async () => {
+    if (!certEditando) return
+    if (!editForm.titulo_externo.trim()) { setErroEdicao('Título é obrigatório.'); return }
+    if (!editForm.data_emissao)          { setErroEdicao('Data de emissão é obrigatória.'); return }
+    setSalvandoEdicao(true)
+    setErroEdicao('')
+    try {
+      const fd = new FormData()
+      // Os cinco campos SEMPRE, mesmo vazios — é o que permite apagar um valor
+      // (o modal de upload omite os vazios, aqui isso impediria limpar o campo).
+      fd.append('titulo_externo',    editForm.titulo_externo)
+      fd.append('entidade_emissora', editForm.entidade_emissora)
+      fd.append('data_emissao',      editForm.data_emissao)
+      fd.append('data_validade',     editForm.data_validade)
+      fd.append('carga_horaria',     editForm.carga_horaria)
+      if (editArquivo) fd.append('arquivo', editArquivo)
+      await certificadosAPI.editarExterno(certEditando.id, fd)
+      setCertEditando(null)
+      setEditArquivo(null)
+      carregar(pagina)
+    } catch (err: any) {
+      setErroEdicao(err?.message ?? 'Erro ao salvar.')
+    } finally {
+      setSalvandoEdicao(false)
     }
   }
 
@@ -217,7 +268,7 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
             ) : certificados.map((cert: any) => (
               <div key={cert.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
                 {/* Faixa colorida */}
-                <div style={{ height: '6px', background: cert.tipo === 'externo' ? '#f59e0b' : '#0d2550' }} />
+                <div style={{ height: '6px', background: cert.tipo === 'externo' ? '#F5C400' : '#0d2550' }} />
 
                 <div style={{ padding: '16px' }}>
                   {/* Ícone + título */}
@@ -235,6 +286,17 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
                     </div>
                     {cert.tipo === 'externo' && (
                       <span style={{ fontSize: '10px', padding: '2px 6px', background: '#f59e0b', color: '#fff', borderRadius: '4px', fontWeight: 700, flexShrink: 0 }}>EXT</span>
+                    )}
+                    {cert.tipo === 'externo' && (
+                      <button
+                        onClick={() => abrirEdicao(cert)}
+                        title="Editar certificado"
+                        style={{ width: '26px', height: '26px', background: 'none', border: 'none', color: C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}
+                        onMouseEnter={e => { e.currentTarget.style.color = C.blue }}
+                        onMouseLeave={e => { e.currentTarget.style.color = C.muted }}
+                      >
+                        <Pencil size={14} />
+                      </button>
                     )}
                   </div>
 
@@ -379,12 +441,23 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
                     {cert.aluno_setor ?? '—'}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <button
-                      onClick={() => baixarCertificado(cert)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '6px', fontSize: '11px', fontWeight: 600, color: C.text, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >
-                      <Download size={12} /> Baixar
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        onClick={() => baixarCertificado(cert)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '6px', fontSize: '11px', fontWeight: 600, color: C.text, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        <Download size={12} /> Baixar
+                      </button>
+                      {cert.tipo === 'externo' && (
+                        <button
+                          onClick={() => abrirEdicao(cert)}
+                          title="Editar certificado"
+                          style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 10px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '6px', fontSize: '11px', fontWeight: 600, color: C.text, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          <Pencil size={12} /> Editar
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -495,6 +568,107 @@ export function CertificadosAdmin({ onNavigate, onLogout }: CertificadosAdminPro
                 style={{ padding: '9px 18px', background: C.blue, border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: enviando ? 'not-allowed' : 'pointer', opacity: enviando ? 0.7 : 1 }}
               >
                 {enviando ? 'Enviando...' : 'Enviar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal editar certificado externo */}
+      {certEditando && (
+        <div
+          onClick={() => setCertEditando(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}
+          >
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: C.text, margin: '0 0 20px' }}>
+              Editar Certificado Externo
+            </h2>
+
+            <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Aluno</label>
+            <div style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.muted, marginBottom: '14px', boxSizing: 'border-box' }}>
+              {certEditando.aluno_nome}
+            </div>
+
+            <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Título do Certificado *</label>
+            <input
+              value={editForm.titulo_externo}
+              onChange={e => setEditForm(f => ({ ...f, titulo_externo: e.target.value }))}
+              placeholder="Ex: NR-35 Trabalho em Altura"
+              style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, marginBottom: '14px', boxSizing: 'border-box' }}
+            />
+
+            <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Entidade Emissora</label>
+            <input
+              value={editForm.entidade_emissora}
+              onChange={e => setEditForm(f => ({ ...f, entidade_emissora: e.target.value }))}
+              placeholder="Ex: SENAI, SESI..."
+              style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, marginBottom: '14px', boxSizing: 'border-box' }}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Data de Emissão *</label>
+                <input type="date" value={editForm.data_emissao}
+                  onChange={e => setEditForm(f => ({ ...f, data_emissao: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Data de Validade</label>
+                <input type="date" value={editForm.data_validade}
+                  onChange={e => setEditForm(f => ({ ...f, data_validade: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Carga Horária</label>
+            <input
+              value={editForm.carga_horaria}
+              onChange={e => setEditForm(f => ({ ...f, carga_horaria: e.target.value }))}
+              placeholder="Ex: 8h"
+              style={{ width: '100%', padding: '9px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, marginBottom: '14px', boxSizing: 'border-box' }}
+            />
+
+            <label style={{ fontSize: '12px', color: C.muted, display: 'block', marginBottom: '4px' }}>Substituir arquivo (opcional)</label>
+            <input
+              type="file" accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setEditArquivo(e.target.files?.[0] ?? null)}
+              style={{ width: '100%', fontSize: '13px', color: C.text, marginBottom: '4px' }}
+            />
+            {editArquivo && (
+              <p style={{ fontSize: '11px', color: C.muted, margin: '0 0 6px' }}>📎 {editArquivo.name}</p>
+            )}
+            {certEditando.url_pdf && (
+              <a
+                href={`${BACKEND_URL}${certEditando.url_pdf}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-block', fontSize: '12px', color: C.blue, fontWeight: 600, marginBottom: '8px' }}
+              >
+                Ver arquivo atual
+              </a>
+            )}
+
+            {erroEdicao && (
+              <p style={{ fontSize: '12px', color: '#ef4444', margin: '8px 0 0' }}>⚠️ {erroEdicao}</p>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button
+                onClick={() => setCertEditando(null)}
+                style={{ padding: '9px 18px', background: 'none', border: `1.5px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', color: C.text, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={salvarEdicao}
+                disabled={salvandoEdicao}
+                style={{ padding: '9px 18px', background: C.blue, border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: salvandoEdicao ? 'not-allowed' : 'pointer', opacity: salvandoEdicao ? 0.7 : 1 }}
+              >
+                {salvandoEdicao ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>

@@ -207,7 +207,7 @@ export function CertificadosInstrutor({ onNavigate: _onNavigate }: CertificadosI
               </div>
             ) : certificados.map((cert: any) => (
               <div key={cert.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', position: 'relative' }}>
-                <div style={{ height: '6px', background: cert.tipo === 'externo' ? '#f59e0b' : '#0d2550' }} />
+                <div style={{ height: '6px', background: cert.tipo === 'externo' ? '#F5C400' : '#0d2550' }} />
 
                 <div style={{ padding: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
