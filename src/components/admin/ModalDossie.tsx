@@ -19,11 +19,17 @@ interface CursoDossie {
 }
 
 interface CertificadoDossie {
+  id: string
   codigo: string
   curso_titulo: string
   data_emissao: string
   data_validade: string | null
   nota_obtida: number | null
+  // Só preenchidos em certificado externo (tipo === 'externo').
+  tipo?: string | null
+  entidade_emissora?: string | null
+  url_pdf?: string | null
+  carga_horaria?: string | null
 }
 
 interface ProvaDossie {
@@ -242,12 +248,30 @@ export function ModalDossie({ aluno, onFechar }: ModalDossieProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {dados.certificados.map(cert => (
                     <div key={cert.codigo} style={{ padding: '12px 14px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '10px' }}>
-                      <p style={{ fontSize: '13px', fontWeight: 600, color: C.text, margin: '0 0 3px' }}>{cert.curso_titulo}</p>
+                      <p style={{ fontSize: '13px', fontWeight: 600, color: C.text, margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        {cert.curso_titulo}
+                        {cert.tipo === 'externo' && (
+                          <span style={{ fontSize: '10px', padding: '2px 6px', background: '#f59e0b', color: '#fff', borderRadius: '4px', fontWeight: 700, flexShrink: 0 }}>EXT</span>
+                        )}
+                      </p>
+                      {cert.tipo === 'externo' && cert.entidade_emissora && (
+                        <p style={{ fontSize: '11px', color: C.muted, margin: '0 0 3px' }}>{cert.entidade_emissora}</p>
+                      )}
                       <p style={{ fontSize: '11px', color: C.muted, margin: 0, fontFamily: 'monospace' }}>{cert.codigo}</p>
                       <p style={{ fontSize: '11px', color: C.muted, margin: '3px 0 0' }}>
                         Emitido em {dataBR(cert.data_emissao)} · Válido até {dataBR(cert.data_validade)}
                         {cert.nota_obtida !== null && ` · Nota ${cert.nota_obtida}%`}
                       </p>
+                      {cert.tipo === 'externo' && cert.url_pdf && (
+                        <a
+                          href={`${BACKEND_URL}${cert.url_pdf}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', fontWeight: 600, color: C.blue }}
+                        >
+                          Ver arquivo
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
