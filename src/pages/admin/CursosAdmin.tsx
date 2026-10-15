@@ -341,8 +341,8 @@ export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso }: {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '14px' }}>
                       {[
                         { icon: Clock,    val: curso.carga_horaria ?? '—',                                   label: 'Carga'    },
-                        { icon: BookOpen, val: `${curso.total_aulas ?? 0} aulas`,                          label: 'Conteúdo' },
-                        { icon: Users,    val: parseInt(curso.total_alunos_matriculados) || 0,             label: 'Alunos'   },
+                        { icon: BookOpen, val: `${Number(curso.total_aulas_real) || 0} aulas`,                          label: 'Conteúdo' },
+                        { icon: Users,    val: Number(curso.publico_total) || 0,             label: 'Alunos'   },
                       ].map(s => (
                         <div key={s.label} style={{ background: C.surface2, borderRadius: '8px', padding: '8px', textAlign: 'center' }}>
                           <div style={{ fontSize: '13px', fontWeight: 700, color: C.text }}>{s.val}</div>
@@ -424,12 +424,12 @@ export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso }: {
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${curso.cor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{curso.icone}</div>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontSize: '13px', fontWeight: 600, color: C.text, margin: '0 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{curso.titulo}</p>
-                      <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>{curso.carga_horaria ?? '—'} · {curso.total_aulas ?? 0} aulas</p>
+                      <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>{curso.carga_horaria ?? '—'} · {Number(curso.total_aulas_real) || 0} aulas</p>
                     </div>
                   </div>
                   <span style={{ fontSize: '12px', color: C.muted2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{curso.cargo ?? '—'}</span>
                   <span style={{ fontSize: '12px', color: C.muted2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{curso.categoria ?? '—'}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: C.text, textAlign: 'center' }}>{parseInt(curso.total_alunos_matriculados) || 0}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: C.text, textAlign: 'center' }}>{Number(curso.publico_total) || 0}</span>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: C.blue, textAlign: 'center' }}>{curso.carga_horaria ?? '—'}</span>
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     {(() => {

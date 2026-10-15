@@ -230,10 +230,11 @@ export function CursoDetalheConteudo({ cursoId, onNavigate: _onNavigate, onVolta
     </div>
   )
 
-  const totalAulas         = parseInt(curso.total_aulas) || 0
-  const totalAlunos        = parseInt(curso.total_alunos_matriculados) || 0
-  const totalConcluidos    = parseInt(curso.total_concluidos) || 0
-  const progressoMedio     = parseInt(curso.progresso_medio) || 0
+  const totalAulas         = Number(curso.total_aulas_real) || 0
+  const totalAlunos        = Number(curso.publico_total) || 0
+  const totalConcluidos    = Number(curso.total_concluintes) || 0
+  const progressoMedio     = Number(curso.progresso_medio) || 0
+  const totalIniciaram     = Number(curso.total_iniciaram) || 0
   const corCurso           = curso.cor ?? '#1a56ff'
   const statusLabel        = curso.status === 'ativo' ? 'Ativo' : curso.status === 'rascunho' ? 'Rascunho' : 'Arquivado'
   const corStatus          = curso.status === 'ativo'
@@ -296,9 +297,9 @@ export function CursoDetalheConteudo({ cursoId, onNavigate: _onNavigate, onVolta
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '28px' }}>
             {[
               { Icon: BookOpen,   val: totalAulas,       label: 'Total de aulas',        cor: C.blue    },
-              { Icon: Users,      val: totalAlunos,      label: 'Alunos matriculados',   cor: '#f59e0b' },
+              { Icon: Users,      val: totalAlunos,      label: 'Alunos com acesso',   cor: '#f59e0b' },
               { Icon: Check,      val: totalConcluidos,  label: 'Concluíram o curso',    cor: '#10b981' },
-              { Icon: TrendingUp, val: `${progressoMedio}%`, label: 'Progresso médio',  cor: '#8b5cf6' },
+              { Icon: TrendingUp, val: `${progressoMedio}%`, label: 'Progresso médio',  cor: '#8b5cf6', sub: `${totalIniciaram} iniciaram` },
             ].map(s => (
               <div key={s.label} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: `${s.cor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -307,6 +308,7 @@ export function CursoDetalheConteudo({ cursoId, onNavigate: _onNavigate, onVolta
                 <div>
                   <div style={{ fontSize: '20px', fontWeight: 700, color: C.text, lineHeight: 1 }}>{s.val}</div>
                   <div style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>{s.label}</div>
+                  {'sub' in s && s.sub && <div style={{ fontSize: '10px', color: C.muted, marginTop: '1px' }}>{s.sub}</div>}
                 </div>
               </div>
             ))}
