@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import apiRequest, { cursosAPI } from '../services/api'
 import { getUsuario } from '../services/authStorage'
+import { calcularProgressoAluno } from '../utils/progressoAluno'
 
 export interface CursoReal {
   id: string
@@ -163,13 +164,9 @@ export function useDadosReaisAluno(): DadosAluno {
   const cursosConcluidos = cursos.filter(c => c.progresso_usuario >= 100).length
   const cursosAtivos     = totalCursos - cursosConcluidos
 
-  const totalAulas      = cursos.reduce((s, c) => s + (c.total_aulas_real || 0), 0)
-  const aulasConcluidas = cursos.reduce((s, c) => s + (c.aulas_concluidas  || 0), 0)
-
-  // Ponderado por aula (não média por curso): bate com o card do curso
-  const percentual = totalAulas > 0
-    ? Math.round(aulasConcluidas / totalAulas * 100)
-    : 0
+  // Ponderado por aula (não média por curso): bate com o card do curso.
+  // Mesma função do cabeçalho de Meus Cursos — os dois não divergem.
+  const { total: totalAulas, concluidas: aulasConcluidas, percentual } = calcularProgressoAluno(cursos)
 
   const horasEstudadas = Math.round((aulasConcluidas * 30) / 60)
 

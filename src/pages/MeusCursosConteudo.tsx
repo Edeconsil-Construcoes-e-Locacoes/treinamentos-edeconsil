@@ -3,6 +3,7 @@ import { Search, BookOpen, Clock, Check } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useDadosReaisAluno } from '../hooks/useDadosReaisAluno'
 import { cursosAPI } from '../services/api'
+import { calcularProgressoAluno } from '../utils/progressoAluno'
 
 /**
  * Conteudo da lista de cursos, SEM layout (nem Sidebar, nem Topbar, nem
@@ -80,13 +81,9 @@ export function MeusCursosConteudo({ onAbrirCurso }: MeusCursosConteudoProps) {
 
   // total_aulas é coluna morta (vale 0 em quase todo curso) — o COUNT real
   // vem em total_aulas_real. Sem isso o contador do cabeçalho somava zero.
-  const totalAulasReal = cursosApi.reduce((s: number, c: any) => s + (c.total_aulas_real ?? c.total_aulas ?? c.totalAulas ?? 0), 0)
-  const aulasConcluídasReal = cursosApi.reduce((s: number, c: any) => {
-    const prog  = c.progresso_usuario ?? c.progresso ?? 0
-    const total = c.total_aulas_real ?? c.total_aulas ?? c.totalAulas ?? 0
-    return s + (c.aulas_concluidas ?? c.aulasConcluidas ?? Math.round((prog / 100) * total))
-  }, 0)
-  const percentualReal = totalAulasReal > 0 ? Math.round((aulasConcluídasReal / totalAulasReal) * 100) : 0
+  // Mesma função do card do menu lateral (Number() em cada contador: o node-pg
+  // devolve COUNT como string e a soma concatenava).
+  const { concluidas: aulasConcluídasReal, total: totalAulasReal, percentual: percentualReal } = calcularProgressoAluno(cursosApi)
 
 
   return (
