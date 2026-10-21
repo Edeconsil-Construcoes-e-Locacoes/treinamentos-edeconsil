@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { Bell, CheckCheck, MessageSquare, Award, BookOpen, AlertCircle, X } from 'lucide-react'
+import { Bell, CheckCheck, MessageSquare, Award, BookOpen, AlertCircle, X, Megaphone } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import type { Notificacao } from '../hooks/useNotificacoes'
 
@@ -21,6 +21,7 @@ function iconeNotif(tipo: string) {
     case 'nova_mensagem':       return <MessageSquare size={14} color="#1a56ff" />
     case 'reprovado':           return <AlertCircle  size={14} color="#ef4444" />
     case 'aluno_concluiu':      return <BookOpen     size={14} color="#10b981" />
+    case 'aviso':               return <Megaphone    size={14} color="#F5C400" />
     default:                    return <Bell         size={14} color="#6366f1" />
   }
 }

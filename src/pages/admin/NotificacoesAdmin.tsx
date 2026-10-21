@@ -3,9 +3,11 @@ import { RefreshCw } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LayoutAdmin } from '../../components/admin/LayoutAdmin'
 import { notificacoesAPI } from '../../services/api'
+import { AvisosPainel } from '../../components/AvisosPainel'
 
 interface NotificacoesAdminProps {
   onNavigate: (page: string) => void
+  intencao?: string | null
   onLogout:   () => void
 }
 
@@ -36,7 +38,7 @@ function formatarData(iso: string) {
   })
 }
 
-export function NotificacoesAdmin({ onNavigate, onLogout }: NotificacoesAdminProps) {
+export function NotificacoesAdmin({ onNavigate, onLogout, intencao }: NotificacoesAdminProps) {
   const { C } = useTheme()
 
   const [notificacoes, setNotificacoes] = useState<any[]>([])
@@ -78,6 +80,8 @@ export function NotificacoesAdmin({ onNavigate, onLogout }: NotificacoesAdminPro
       topbarSubtitulo="Histórico de todos os eventos do sistema."
     >
       <div style={{ padding: '28px 24px' }}>
+
+        <AvisosPainel modo="admin" abrirFormularioAoCarregar={intencao === 'enviar'} />
 
         {/* Cabeçalho */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>

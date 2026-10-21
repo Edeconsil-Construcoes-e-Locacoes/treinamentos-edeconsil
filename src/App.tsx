@@ -279,7 +279,8 @@ if (pagina === 'configuracoesAdmin') return (
     )
     if (pagina === 'notificacoesAdmin') return (
       <NotificacoesAdmin
-        onNavigate={(p) => setPagina(p as Pagina)}
+        onNavigate={navegar}
+        intencao={intencao}
         onLogout={handleLogout}
       />
     )

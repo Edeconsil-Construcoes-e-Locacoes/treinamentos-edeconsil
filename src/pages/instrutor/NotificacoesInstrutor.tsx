@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { notificacoesAPI, instrutorAPI } from '../../services/api'
+import { AvisosPainel } from '../../components/AvisosPainel'
 
 const TIPO_CFG: Record<string, { label: string; icone: string; cor: string; bg: string }> = {
   curso_concluido:     { label: 'Curso Concluído', icone: '🎓', cor: '#10b981', bg: 'rgba(16,185,129,0.10)'  },
@@ -80,6 +81,8 @@ export function NotificacoesInstrutor({ onNavigate: _onNavigate }: { onNavigate:
 
   return (
     <div style={{ padding: '28px 24px' }}>
+
+      <AvisosPainel modo="instrutor" />
 
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>

@@ -29,7 +29,7 @@ const acoes = [
   { icon: BookOpen,  label: 'Novo Curso',         desc: 'Criar um novo curso',               page: 'cursosAdmin',       intencao: 'criar'    },
   { icon: Users,     label: 'Nova Turma',         desc: 'Criar uma nova turma',              page: 'turmasAdmin',       intencao: 'criar'    },
   { icon: UserPlus,  label: 'Matricular Alunos',  desc: 'Importar planilha de alunos',       page: 'alunosAdmin',       intencao: 'importar' },
-  { icon: Send,      label: 'Enviar Notificação', desc: 'Enviar para os alunos',             page: 'notificacoesAdmin', intencao: undefined  },
+  { icon: Send,      label: 'Enviar Notificação', desc: 'Aviso para todos ou para uma turma', page: 'notificacoesAdmin', intencao: 'enviar'    },
   { icon: BarChart2, label: 'Relatórios',         desc: 'Indicadores de treinamento',        page: 'indicadoresAdmin',  intencao: undefined  },
 ]
 

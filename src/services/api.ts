@@ -417,6 +417,15 @@ export const notificacoesAPI = {
   },
 }
 
+export const avisosAPI = {
+  enviar: (dados: {
+    titulo: string; mensagem: string; assunto: string
+    destino?: 'todos' | 'turma'; turma_id?: string | null
+  }) => apiRequest<{ enviados: number; envio_id: string }>('/avisos', { method: 'POST', body: JSON.stringify(dados) }),
+
+  enviados: () => apiRequest<{ avisos: any[] }>('/avisos/enviados'),
+}
+
 export const conversasAPI = {
   listar: () => apiRequest<any[]>('/conversas'),
   mensagens: (id: string) => apiRequest<any[]>(`/conversas/${id}/mensagens`),
