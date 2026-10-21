@@ -13,6 +13,15 @@ import { useMetricasAdmin } from '../hooks/useMetricasAdmin'
 import { useBreakpoint } from '../hooks/useMobile'
 import { indicadoresAPI } from '../services/api'
 
+// Horas decimais -> texto: abaixo de 1h em minutos ("40min"); depois "12h" ou "12h30".
+function formatarHoras(h: number): string {
+  const totalMin = Math.round((Number(h) || 0) * 60)
+  if (totalMin < 60) return `${totalMin}min`
+  const horas = Math.floor(totalMin / 60)
+  const min = totalMin % 60
+  return min === 0 ? `${horas}h` : `${horas}h${String(min).padStart(2, '0')}`
+}
+
 const metricasBase = [
   { icon: BookOpen,      label: 'Total de Cursos',   cor: '#3b82f6' },
   { icon: BookOpen,      label: 'Cursos Ativos',     cor: '#1a56ff' },
@@ -53,6 +62,19 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
       .catch(err => console.error('Erro ao carregar admissões:', err))
   }, [])
   const admissoesData = admissoes.map(a => ({ mes: a.mes, total: Number(a.total) }))
+
+  const [horasTurma, setHorasTurma] = useState<Awaited<ReturnType<typeof indicadoresAPI.horasPorTurma>> | null>(null)
+  const [carregandoHoras, setCarregandoHoras] = useState(true)
+  const [erroHoras, setErroHoras] = useState('')
+  useEffect(() => {
+    indicadoresAPI.horasPorTurma()
+      .then(setHorasTurma)
+      .catch(err => {
+        console.error('Erro ao carregar horas por turma:', err)
+        setErroHoras(err instanceof Error ? err.message : 'Erro ao carregar horas de treinamento.')
+      })
+      .finally(() => setCarregandoHoras(false))
+  }, [])
 
   const valoresMetricas = [
     m.cursos.total,
@@ -378,35 +400,38 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
               ))}
             </div>
 
-            {/* Alunos Recentes */}
+            {/* Índice de Horas de Treinamento por Turma */}
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: C.text, marginBottom: '14px' }}>Alunos Recentes</div>
-              {m.alunosRecentes.map((aluno: any) => (
-                <div key={aluno.id} style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '10px 0', borderBottom: `1px solid ${C.border}`,
-                }}>
-                  <div style={{
-                    width: '32px', height: '32px', borderRadius: '50%',
-                    background: 'rgba(26,86,255,0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '12px', fontWeight: 700, color: C.blue, flexShrink: 0,
-                  }}>
-                    {aluno.nome.split(' ').slice(0, 2).map((n: string) => n[0]).join('')}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: C.text, margin: '0 0 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {aluno.nome}
-                    </p>
-                    <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>
-                      {aluno.setor ?? aluno.cargo ?? '—'}
-                    </p>
-                  </div>
-                  <p style={{ fontSize: '11px', color: C.muted, margin: 0, flexShrink: 0 }}>
-                    {new Date(aluno.criado_em).toLocaleDateString('pt-BR')}
-                  </p>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: C.text, marginBottom: '2px' }}>Índice de Horas de Treinamento</div>
+              <div style={{ fontSize: '11px', color: C.muted, marginBottom: '12px' }}>
+                {horasTurma ? `Total geral: ${formatarHoras(horasTurma.horas_total_geral)}` : '\u00A0'}
+              </div>
+              {carregandoHoras ? (
+                <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>Carregando…</p>
+              ) : erroHoras ? (
+                <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{erroHoras}</p>
+              ) : !horasTurma || horasTurma.turmas.length === 0 ? (
+                <p style={{ fontSize: '12px', color: C.muted, margin: 0 }}>Nenhuma turma encontrada.</p>
+              ) : (
+                <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                  {horasTurma.turmas.map(t => (
+                    <div key={t.turma_id ?? 'sem-turma'} style={{ padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: C.text, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.turma_nome}</span>
+                        <span style={{ fontSize: '15px', fontWeight: 700, color: C.blue, flexShrink: 0 }}>{formatarHoras(t.horas_total)}</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>
+                        {t.colaboradores_com_horas} de {t.colaboradores_total} colaboradores · média {formatarHoras(t.media_por_colaborador)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {horasTurma && horasTurma.cursos_sem_carga.length > 0 && (
+                <p style={{ fontSize: '10px', color: C.muted, margin: '10px 0 0' }}>
+                  Fora da conta (sem carga horária): {horasTurma.cursos_sem_carga.join(', ')}
+                </p>
+              )}
             </div>
 
           </div>

@@ -393,6 +393,19 @@ export const indicadoresAPI = {
         progresso_geral: number
       }>
     }>('/admin/indicadores/alunos'),
+  horasPorTurma: () =>
+    apiRequest<{
+      turmas: Array<{
+        turma_id: string | null
+        turma_nome: string
+        horas_total: number
+        colaboradores_com_horas: number
+        colaboradores_total: number
+        media_por_colaborador: number
+      }>
+      horas_total_geral: number
+      cursos_sem_carga: string[]
+    }>('/admin/indicadores/horas-turma'),
 }
 
 export const notificacoesAPI = {
