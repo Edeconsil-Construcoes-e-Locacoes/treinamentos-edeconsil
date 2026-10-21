@@ -31,6 +31,7 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
   const [form, setForm]         = useState<FormAluno>(() => ({ ...FORM_INICIAL, setor: setorInicial ?? '' }))
   const [turmasDisponiveis, setTurmasDisponiveis] = useState<any[]>([])
   const [cargos, setCargos]     = useState<any[]>([])
+  const [turmaId, setTurmaId]   = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro]         = useState('')
   const [sucesso, setSucesso]   = useState<any>(null)
@@ -39,7 +40,14 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
     turmasAPI.listar()
       .then((lista: any) => {
         const arr = Array.isArray(lista) ? lista : (lista.turmas ?? [])
-        setTurmasDisponiveis(arr.filter((t: any) => t.status === 'ativa'))
+        const ativas = arr.filter((t: any) => t.status === 'ativa')
+        setTurmasDisponiveis(ativas)
+        // Painel do instrutor abre o cadastro ja com o setor da turma dele.
+        if (setorInicial) {
+          const alvo = setorInicial.trim().toLowerCase()
+          const m = ativas.find((t: any) => String(t.nome ?? '').trim().toLowerCase() === alvo)
+          if (m) setTurmaId(m.id)
+        }
       })
       .catch(() => {})
   }, [])
@@ -57,13 +65,14 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
 
   const stopKeys = useCallback((e: React.KeyboardEvent) => e.stopPropagation(), [])
 
+  const turmaDoForm = turmasDisponiveis.find((t: any) => t.id === turmaId)
+
   const handleSalvar = async () => {
     setErro('')
     const cpfLimpo = form.cpf.replace(/\D/g, '')
     if (!form.nome.trim())      { setErro('Nome é obrigatório.'); return }
     if (cpfLimpo.length !== 11) { setErro('CPF deve ter 11 dígitos.'); return }
     if (!form.data_nascimento)  { setErro('Data de nascimento é obrigatória.'); return }
-    if (!form.setor)            { setErro('Selecione o Setor / Turma.'); return }
 
     setSalvando(true)
     try {
@@ -74,7 +83,8 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
         data_nascimento: form.data_nascimento,
         matricula:       form.matricula    || null,
         cargo:           form.cargo         || null,
-        setor:           form.setor         || null,
+        turma_id:        turmaId            || null,
+        setor:           (turmaDoForm?.nome ?? form.setor) || null,
         centro_custo:    form.centro_custo || null,
         ramal:           form.ramal        || null,
         celular:         form.celular      || null,
@@ -236,18 +246,18 @@ export function CadastroAluno({ onFechar, onSucesso, setorInicial }: CadastroAlu
 
       {/* Setor / Turma */}
       <div style={{ marginBottom: '14px' }}>
-        <label style={labelStyle}>Setor / Turma <span style={{ color: '#ef4444' }}>*</span></label>
+        <label style={labelStyle}>Turma</label>
         <select
-          value={form.setor}
-          onChange={handleChange('setor')}
+          value={turmaId}
+          onChange={e => setTurmaId(e.target.value)}
           onKeyDown={stopKeys}
-          style={{ ...inputStyle, cursor: 'pointer', color: form.setor ? C.text : C.muted }}
+          style={{ ...inputStyle, cursor: 'pointer', color: turmaId ? C.text : C.muted }}
           onFocus={e => (e.target.style.borderColor = C.blue)}
           onBlur={e  => (e.target.style.borderColor = C.border)}
         >
-          <option value="">Selecione o setor / turma</option>
+          <option value="">Sem turma</option>
           {turmasDisponiveis.map((t: any) => (
-            <option key={t.id} value={t.cargo_grupo || t.nome}>{t.cargo_grupo || t.nome}</option>
+            <option key={t.id} value={t.id}>{t.nome}</option>
           ))}
         </select>
         <p style={{ fontSize: '11px', color: C.muted, margin: '4px 0 0' }}>

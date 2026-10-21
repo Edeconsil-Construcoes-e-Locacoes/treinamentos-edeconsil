@@ -599,7 +599,6 @@ export function TurmasAdmin({ onNavigate, onLogout, intencao }: TurmasAdminProps
             {/* Campos */}
             {([
               { label: 'Nome da turma *', field: 'nome',        placeholder: 'Ex: Recursos Humanos' },
-              { label: 'Grupo / Cargo',   field: 'cargo_grupo', placeholder: 'Ex: Recursos Humanos' },
               { label: 'Setor',           field: 'setor',       placeholder: 'Ex: Administrativo'    },
               { label: 'Responsável',     field: 'responsavel', placeholder: 'Nome do responsável'   },
               { label: 'Ícone (emoji)',   field: 'icone',       placeholder: '🏢'                    },

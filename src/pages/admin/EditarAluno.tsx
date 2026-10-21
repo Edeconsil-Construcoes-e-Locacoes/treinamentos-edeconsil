@@ -20,6 +20,7 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
   const [nome,         setNome]         = useState('')
   const [cargo,        setCargo]        = useState('')
   const [setor,        setSetor]        = useState('')
+  const [turmaId,      setTurmaId]      = useState('')
   const [matricula,    setMatricula]    = useState('')
   const [ramal,        setRamal]        = useState('')
   const [celular,      setCelular]      = useState('')
@@ -40,7 +41,8 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
     turmasAPI.listar()
       .then((lista: any) => {
         const arr = Array.isArray(lista) ? lista : (lista.turmas ?? [])
-        setTurmasDisponiveis(arr.filter((t: any) => t.status === 'ativa'))
+        // Mantem a turma atual do aluno na lista mesmo se estiver inativa.
+        setTurmasDisponiveis(arr.filter((t: any) => t.status === 'ativa' || t.id === aluno?.turma_id))
       })
       .catch(() => {})
   }, [])
@@ -56,6 +58,7 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
     setNome(aluno.nome           ?? '')
     setCargo(aluno.cargo         ?? '')
     setSetor(aluno.setor         ?? '')
+    setTurmaId(aluno.turma_id    ?? '')
     setMatricula(aluno.matricula ?? '')
     setRamal(aluno.ramal         ?? '')
     setCelular(aluno.celular     ?? '')
@@ -84,7 +87,10 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
       const atualizado = await usuariosAPI.atualizar(aluno.id, {
         nome:          nome.trim(),
         cargo,
-        setor,
+        // Turma escolhida define o setor (texto coerente com a turma). Sem turma,
+        // o setor atual segue como esta (ex.: nome de obra dos Parceiros).
+        turma_id:      turmaId || null,
+        setor:         turmasDisponiveis.find((t: any) => t.id === turmaId)?.nome ?? setor,
         matricula:     matricula   || null,
         ramal:         ramal       || null,
         celular:       celular     || null,
@@ -323,22 +329,22 @@ export function EditarAluno({ aluno, onFechar, onSucesso }: EditarAlunoProps) {
 
       {/* Setor / Turma */}
       <div style={{ marginBottom: '14px' }}>
-        <label style={labelStyle}>Setor / Turma</label>
+        <label style={labelStyle}>Turma</label>
         <select
-          value={setor}
-          onChange={e => setSetor(e.target.value)}
+          value={turmaId}
+          onChange={e => setTurmaId(e.target.value)}
           onKeyDown={stopKeys}
           onFocus={onFocusInput}
           onBlur={onBlurInput}
-          style={{ ...inputStyle, cursor: 'pointer', color: setor ? C.text : C.muted }}
+          style={{ ...inputStyle, cursor: 'pointer', color: turmaId ? C.text : C.muted }}
         >
-          <option value="">Selecione o setor / turma</option>
+          <option value="">Sem turma</option>
           {turmasDisponiveis.map((t: any) => (
-            <option key={t.id} value={t.cargo_grupo || t.nome}>{t.cargo_grupo || t.nome}</option>
+            <option key={t.id} value={t.id}>{t.nome}</option>
           ))}
         </select>
         <p style={{ fontSize: '11px', color: C.muted, margin: '4px 0 0' }}>
-          Alterar o setor atualiza os cursos disponíveis para o aluno
+          Alterar a turma atualiza os cursos disponíveis para o aluno
         </p>
       </div>
 
