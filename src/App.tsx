@@ -120,6 +120,13 @@ function AppContent() {
   const [cursoProvaSlug, setCursoProvaSlug]     = useState('coord-suprimentos')
   const [cursoProvaTitulo, setCursoProvaTitulo] = useState('Coordenação de Suprimentos')
   const [navKey, setNavKey] = useState(0)
+  // Intenção que acompanha a navegação (ex.: 'criar' abre o formulário da tela
+  // de destino). Qualquer navegação sem intenção zera, então não reabre modal.
+  const [intencao, setIntencao] = useState<string | null>(null)
+  const navegar = (p: string, intencaoNova?: string) => {
+    setPagina(p as Pagina)
+    setIntencao(intencaoNova ?? null)
+  }
   // Curso aberto pelo admin em "Minhas Aulas" (fluxo do aluno dentro do painel).
   const [cursoAluno, setCursoAluno] = useState<string | null>(null)
   const [etapaCurso, setEtapaCurso] = useState<'detalhe' | 'video' | 'prova'>('detalhe')
@@ -178,7 +185,8 @@ function AppContent() {
     )
     if (pagina === 'cursosAdmin') return (
       <CursosAdmin
-        onNavigate={(p) => setPagina(p as Pagina)}
+        onNavigate={navegar}
+        intencao={intencao}
         onLogout={handleLogout}
         onAbrirCurso={(slug) => { setCursoAtivoId(slug); setPagina('cursoDetalheAdmin') }}
       />
@@ -199,7 +207,8 @@ function AppContent() {
     )
     if (pagina === 'turmasAdmin') return (
       <TurmasAdmin
-        onNavigate={(p) => setPagina(p as Pagina)}
+        onNavigate={navegar}
+        intencao={intencao}
         onLogout={handleLogout}
       />
     )
@@ -211,7 +220,8 @@ function AppContent() {
     )
     if (pagina === 'alunosAdmin') return (
       <AlunosAdmin
-        onNavigate={(p) => setPagina(p as Pagina)}
+        onNavigate={navegar}
+        intencao={intencao}
         onLogout={handleLogout}
       />
     )
@@ -275,7 +285,7 @@ if (pagina === 'configuracoesAdmin') return (
     )
     return (
       <DashboardAdmin
-        onNavigate={(p) => setPagina(p as Pagina)}
+        onNavigate={navegar}
         onLogout={handleLogout}
       />
     )

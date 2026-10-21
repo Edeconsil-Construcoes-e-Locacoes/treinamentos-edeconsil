@@ -9,6 +9,7 @@ import { useBreakpoint } from '../../hooks/useMobile'
 
 interface TurmasAdminProps {
   onNavigate: (page: string) => void
+  intencao?: string | null
   onLogout:   () => void
 }
 
@@ -52,7 +53,7 @@ const CORES: Record<string, string> = {
   'Patrimônio':                        '#92400e',
 }
 
-export function TurmasAdmin({ onNavigate, onLogout }: TurmasAdminProps) {
+export function TurmasAdmin({ onNavigate, onLogout, intencao }: TurmasAdminProps) {
   const { C } = useTheme()
   const { cols } = useBreakpoint()
 
@@ -89,6 +90,11 @@ export function TurmasAdmin({ onNavigate, onLogout }: TurmasAdminProps) {
     setFormTurma({ nome: '', cargo_grupo: '', setor: '', responsavel: '', icone: '🏢', cor: '#0d2550', status: 'ativa', instrutor_id: '' })
     setModalTurma({ modo: 'criar' })
   }
+
+  // Vindo do Dashboard (Gerenciamento Rápido) com intenção 'criar'.
+  useEffect(() => {
+    if (intencao === 'criar') abrirCriar()
+  }, [intencao])
 
   const abrirEditar = (turma: any) => {
     setFormTurma({

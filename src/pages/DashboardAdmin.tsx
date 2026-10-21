@@ -26,15 +26,15 @@ const metricasBase = [
 
 
 const acoes = [
-  { icon: BookOpen,  label: 'Novo Curso',        desc: 'Criar um novo curso'        },
-  { icon: Users,     label: 'Nova Turma',         desc: 'Criar uma nova turma'       },
-  { icon: UserPlus,  label: 'Matricular Alunos',  desc: 'Matricular alunos em massa' },
-  { icon: Send,      label: 'Enviar Notificação', desc: 'Enviar para os alunos'      },
-  { icon: BarChart2, label: 'Relatórios',         desc: 'Gerar relatórios'           },
+  { icon: BookOpen,  label: 'Novo Curso',         desc: 'Criar um novo curso',               page: 'cursosAdmin',       intencao: 'criar'    },
+  { icon: Users,     label: 'Nova Turma',         desc: 'Criar uma nova turma',              page: 'turmasAdmin',       intencao: 'criar'    },
+  { icon: UserPlus,  label: 'Matricular Alunos',  desc: 'Importar planilha de alunos',       page: 'alunosAdmin',       intencao: 'importar' },
+  { icon: Send,      label: 'Enviar Notificação', desc: 'Enviar para os alunos',             page: 'notificacoesAdmin', intencao: undefined  },
+  { icon: BarChart2, label: 'Relatórios',         desc: 'Indicadores de treinamento',        page: 'indicadoresAdmin',  intencao: undefined  },
 ]
 
 
-export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: string) => void; onLogout: () => void }) {
+export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: string, intencao?: string) => void; onLogout: () => void }) {
   const { C } = useTheme()
   const m = useMetricasAdmin()
   const { isMobile, isTablet, cols } = useBreakpoint()
@@ -417,6 +417,12 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols(2, 3, 5)}, 1fr)`, gap: '12px' }}>
               {acoes.map(a => (
                 <div key={a.label}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onNavigate(a.page, a.intencao)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate(a.page, a.intencao) }
+                  }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '16px 12px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '10px', cursor: 'pointer', transition: 'all 150ms', textAlign: 'center' }}
                   onMouseEnter={e => {
                     e.currentTarget.style.borderColor = 'rgba(26,86,255,0.4)'

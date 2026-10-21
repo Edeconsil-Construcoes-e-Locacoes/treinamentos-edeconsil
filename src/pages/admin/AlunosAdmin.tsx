@@ -41,10 +41,11 @@ type CampoOrdem = 'nome' | 'cargo' | 'setor' | 'status'
 
 interface AlunosAdminProps {
   onNavigate: (page: string) => void
+  intencao?: string | null
   onLogout: () => void
 }
 
-export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
+export function AlunosAdmin({ onNavigate, onLogout, intencao }: AlunosAdminProps) {
   const { C } = useTheme()
   const { cols } = useBreakpoint()
 
@@ -52,6 +53,11 @@ export function AlunosAdmin({ onNavigate, onLogout }: AlunosAdminProps) {
   const [carregando, setCarregando]                   = useState(false)
   const [modalCadastro, setModalCadastro]             = useState(false)
   const [modalImportar, setModalImportar]             = useState(false)
+
+  // Vindo do Dashboard (Gerenciamento Rápido) com intenção 'importar'.
+  useEffect(() => {
+    if (intencao === 'importar') setModalImportar(true)
+  }, [intencao])
   const [menuExportar, setMenuExportar] = useState(false)
   const [exportando, setExportando]     = useState(false)
 

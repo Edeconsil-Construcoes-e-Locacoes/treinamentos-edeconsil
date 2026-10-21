@@ -15,8 +15,9 @@ import { BarraProgresso } from '../../components/BarraProgresso'
 const statusOpcoes = ['Todos', 'Ativo', 'Rascunho', 'Arquivado']
 
 
-export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso }: {
+export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso, intencao }: {
   onNavigate: (p: string) => void
+  intencao?: string | null
   onLogout: () => void
   onAbrirCurso: (slug: string) => void
 }) {
@@ -31,6 +32,11 @@ export function CursosAdmin({ onNavigate, onLogout, onAbrirCurso }: {
   const [cursos, setCursos]               = useState<any[]>([])
   const [carregando, setCarregando]       = useState(true)
   const [modalCriar, setModalCriar]       = useState(false)
+
+  // Vindo do Dashboard (Gerenciamento Rápido) com intenção 'criar'.
+  useEffect(() => {
+    if (intencao === 'criar') setModalCriar(true)
+  }, [intencao])
   const [cursoEditando, setCursoEditando] = useState<any>(null)
   const [confirmExcluir, setConfirmExcluir] = useState<any>(null)
 
