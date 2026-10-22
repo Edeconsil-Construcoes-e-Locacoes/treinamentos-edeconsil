@@ -404,6 +404,14 @@ export const indicadoresAPI = {
         media_por_colaborador: number
       }>
       horas_total_geral: number
+      cursos: Array<{
+        curso_id: string
+        curso_titulo: string
+        carga_horaria: string | null
+        horas_total: number
+        colaboradores_com_horas: number
+        concluintes: number
+      }>
       cursos_sem_carga: string[]
     }>('/admin/indicadores/horas-turma'),
 }
