@@ -8,6 +8,7 @@ export interface MetricasAdmin {
   matriculas:          { total: number; ativas: number }
   certificados:        { total: number }
   taxaConclusao:       number
+  conclusao?:          { atribuidos: number; concluidos: number }
   progressoMedio:      number
   cursosRecentes:      any[]
   alunosRecentes:      any[]

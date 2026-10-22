@@ -79,6 +79,12 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
       .finally(() => setCarregandoHoras(false))
   }, [])
 
+  // Taxa com 1 casa decimal e virgula (ex.: "7,4"). O pg pode mandar string.
+  const taxaNum = Number(m.taxaConclusao) || 0
+  const taxaFmt = taxaNum.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  const concluidosTaxa = Number(m.conclusao?.concluidos) || 0
+  const atribuidosTaxa  = Number(m.conclusao?.atribuidos) || 0
+
   const valoresMetricas = [
     m.cursos.total,
     m.cursos.ativos,
@@ -86,7 +92,7 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
     m.alunos.ativos,
     m.turmas.total,
     m.matriculas.ativas,
-    m.carregando ? '...' : `${m.taxaConclusao}%`,
+    m.carregando ? '...' : `${taxaFmt}%`,
     m.carregando ? '...' : `${m.progressoMedio}%`,
   ]
 
@@ -303,13 +309,16 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
                 <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
                   <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(26,86,255,0.12)" strokeWidth="10" />
                   <circle cx="50" cy="50" r="40" fill="none" stroke={C.blue} strokeWidth="10"
-                    strokeDasharray={`${2 * Math.PI * 40 * (m.taxaConclusao / 100)} ${2 * Math.PI * 40 * (1 - m.taxaConclusao / 100)}`}
+                    strokeDasharray={`${2 * Math.PI * 40 * (taxaNum / 100)} ${2 * Math.PI * 40 * (1 - taxaNum / 100)}`}
                     strokeLinecap="round" />
                 </svg>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: C.text }}>{m.carregando ? '...' : `${m.taxaConclusao}%`}</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: C.text }}>{m.carregando ? '...' : `${taxaFmt}%`}</div>
                   <div style={{ fontSize: '9px', color: C.muted }}>Taxa geral</div>
                 </div>
+              </div>
+              <div style={{ fontSize: '11px', color: C.muted, marginTop: '4px' }}>
+                {m.carregando ? '' : `${concluidosTaxa} de ${atribuidosTaxa} cursos concluídos`}
               </div>
               <div style={{ fontSize: '11px', color: C.muted, marginTop: '4px' }}>⊙ Meta: 70%</div>
             </div>
@@ -385,7 +394,7 @@ export function DashboardAdmin({ onNavigate, onLogout }: { onNavigate: (p: strin
                       {curso.titulo}
                     </p>
                     <p style={{ fontSize: '11px', color: C.muted, margin: 0 }}>
-                      {curso.total_aulas} aulas ·{' '}
+                      {Number(curso.total_aulas_real) || 0} aulas ·{' '}
                       <span style={{
                         color: curso.status === 'ativo' ? '#10b981' :
                                curso.status === 'rascunho' ? '#f59e0b' : C.muted,
